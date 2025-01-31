@@ -1,0 +1,300 @@
+# Diversity analysis
+
+```{r load_data_community}
+load("data/data.Rdata")
+```
+
+## Alpha diversity
+
+```{r alpha_div, comment="", message=FALSE, warning=FALSE}
+# Calculate Hill numbers
+richness <- genome_counts_filt %>%
+  column_to_rownames(var = "genome") %>%
+  dplyr::select(where(~ !all(. == 0))) %>%
+  hilldiv(., q = 0) %>%
+  t() %>%
+  as.data.frame() %>%
+  dplyr::rename(richness = 1) %>%
+  rownames_to_column(var = "sample")
+
+neutral <- genome_counts_filt %>%
+  column_to_rownames(var = "genome") %>%
+  dplyr::select(where(~ !all(. == 0))) %>%
+  hilldiv(., q = 1) %>%
+  t() %>%
+  as.data.frame() %>%
+  dplyr::rename(neutral = 1) %>%
+  rownames_to_column(var = "sample")
+
+phylogenetic <- genome_counts_filt %>%
+  column_to_rownames(var = "genome") %>%
+  dplyr::select(where(~ !all(. == 0))) %>%
+  hilldiv(., q = 1, tree = genome_tree) %>%
+  t() %>%
+  as.data.frame() %>%
+  dplyr::rename(phylogenetic = 1) %>%
+  rownames_to_column(var = "sample")
+
+# Aggregate basal GIFT into elements
+dist <- genome_gifts %>%
+  to.elements(., GIFT_db3) %>%
+  traits2dist(., method = "gower")
+
+functional <- genome_counts_filt %>%
+  column_to_rownames(var = "genome") %>%
+  dplyr::select(where(~ !all(. == 0))) %>%
+  hilldiv(., q = 1, dist = dist) %>%
+  t() %>%
+  as.data.frame() %>%
+  dplyr::rename(functional = 1) %>%
+  rownames_to_column(var = "sample") %>%
+  mutate(functional = if_else(is.nan(functional), 1, functional))
+
+# Merge all metrics
+alpha_div <- richness %>%
+  full_join(neutral, by = join_by(sample == sample)) %>%
+  full_join(phylogenetic, by = join_by(sample == sample)) %>%
+  full_join(functional, by = join_by(sample == sample))
+```
+
+### Acclimation samples
+
+```{r alpha_div_plot_1, comment="", message=FALSE, warning=FALSE, fig.height=6, fig.width=10, fig.fullwidth=TRUE}
+alpha_div %>%
+  pivot_longer(-sample, names_to = "metric", values_to = "value") %>%
+  left_join(., sample_metadata, by = join_by(sample == Tube_code)) %>%
+  filter(time_point=="1_Acclimation") %>%
+  mutate(metric=factor(metric,levels=c("richness","neutral","phylogenetic","functional"))) %>%
+      ggplot(aes(y = value, x = Population, group=Population, color=Population, fill=Population)) +
+      geom_boxplot(outlier.shape = NA) +
+      geom_jitter(alpha=0.5) +
+      scale_color_manual(name="Population",
+          breaks=c("Cold_wet","Hot_dry"),
+          labels=c("Cold","Hot"),
+          values=c('#008080', "#d57d2c")) +
+      scale_fill_manual(name="Population",
+          breaks=c("Cold_wet","Hot_dry"),
+          labels=c("Cold","Hot"),
+          values=c('#00808050', "#d57d2c50")) +
+      facet_wrap(. ~ metric,scales = "free") +
+      coord_cartesian(xlim = c(1, NA)) +
+      stat_compare_means(size=3, label.x=.58) +
+      theme_classic() +
+        theme(
+    strip.background = element_blank(),
+    panel.grid.minor.x = element_line(size = .1, color = "grey"),
+    axis.title.x = element_blank(),
+    axis.title.y = element_text(size=10),
+    axis.text.x = element_text(angle = 45, hjust = 1),
+    # Increase plot size
+    plot.title = element_text(size = 10),
+    axis.text = element_text(size = 8),
+    axis.title = element_text(size = 8)
+      ) +
+  ylab("Alpha diversity")
+```
+
+### Antibiotics samples
+
+```{r alpha_div_plot_2, comment="", message=FALSE, warning=FALSE, fig.height=7, fig.width=10, fig.fullwidth=TRUE}
+alpha_div %>%
+  pivot_longer(-sample, names_to = "metric", values_to = "value") %>%
+  left_join(., sample_metadata, by = join_by(sample == Tube_code)) %>%
+  filter(time_point=="2_Antibiotics") %>%
+  mutate(metric=factor(metric,levels=c("richness","neutral","phylogenetic","functional"))) %>%
+      ggplot(aes(y = value, x = Population, group=Population, color=Population, fill=Population)) +
+      geom_boxplot(outlier.shape = NA) +
+      geom_jitter(alpha=0.5) +
+      scale_color_manual(name="Population",
+          breaks=c("Cold_wet","Hot_dry"),
+          labels=c("Cold","Hot"),
+          values=c('#008080', "#d57d2c")) +
+      scale_fill_manual(name="Population",
+          breaks=c("Cold_wet","Hot_dry"),
+          labels=c("Cold","Hot"),
+          values=c('#00808050', "#d57d2c50")) +
+      facet_wrap(. ~ metric,scales = "free") +
+      coord_cartesian(xlim = c(1, NA)) +
+      stat_compare_means(size=3, label.x=.58) +
+      theme_classic() +
+        theme(
+    strip.background = element_blank(),
+    panel.grid.minor.x = element_line(size = .1, color = "grey"),
+    axis.title.x = element_blank(),
+    axis.title.y = element_text(size=10),
+    axis.text.x = element_text(angle = 45, hjust = 1),
+    # Increase plot size
+    plot.title = element_text(size = 10),
+    axis.text = element_text(size = 8),
+    axis.title = element_text(size = 8)
+      ) +
+  ylab("Alpha diversity")
+```
+
+### Transplant_1 samples
+
+```{r alpha_div_plot_3, comment="", message=FALSE, warning=FALSE, fig.height=7, fig.width=10, fig.fullwidth=TRUE}
+alpha_div %>%
+  pivot_longer(-sample, names_to = "metric", values_to = "value") %>%
+  left_join(., sample_metadata, by = join_by(sample == Tube_code)) %>%
+  filter(time_point=="3_Transplant1") %>%
+  mutate(metric=factor(metric,levels=c("richness","neutral","phylogenetic","functional"))) %>%
+      ggplot(aes(y = value, x = type, group=type, color=type, fill=type)) +
+      geom_boxplot(outlier.shape = NA) +
+      geom_jitter(alpha=0.5) +
+      scale_color_manual(name="Type",
+          breaks=c("Control","Hot_control", "Treatment"),
+          labels=c("Cold-Cold","Hot-Hot", "Cold-Hot"),
+          values=c("#4477AA","#d57d2c", "#76b183")) +
+      scale_fill_manual(name="Type",
+          breaks=c("Control","Hot_control", "Treatment"),
+          labels=c("Cold-Cold","Hot-Hot", "Cold-Hot"),
+          values=c("#4477AA50","#d57d2c50","#76b18350")) +
+      facet_wrap(. ~ metric,scales = "free") +
+      coord_cartesian(xlim = c(1, NA)) +
+      stat_compare_means(size=3, label.x=.7) +
+      theme_classic() +
+        theme(
+    strip.background = element_blank(),
+    panel.grid.minor.x = element_line(size = .1, color = "grey"),
+    axis.title.x = element_blank(),
+    axis.title.y = element_text(size=10),
+    axis.text.x = element_text(angle = 45, hjust = 1),
+    # Increase plot size
+    plot.title = element_text(size = 10),
+    axis.text = element_text(size = 8),
+    axis.title = element_text(size = 8)
+      ) +
+  ylab("Alpha diversity")
+```
+
+### Transplant_2 samples
+
+```{r alpha_div_plot_4, comment="", message=FALSE, warning=FALSE, fig.height=7, fig.width=10, fig.fullwidth=TRUE}
+alpha_div %>%
+  pivot_longer(-sample, names_to = "metric", values_to = "value") %>%
+  left_join(., sample_metadata, by = join_by(sample == Tube_code)) %>%
+  filter(time_point=="4_Transplant2") %>%
+  mutate(metric=factor(metric,levels=c("richness","neutral","phylogenetic","functional"))) %>%
+      ggplot(aes(y = value, x = type, group=type, color=type, fill=type)) +
+      geom_boxplot(outlier.shape = NA) +
+      geom_jitter(alpha=0.5) +
+      scale_color_manual(name="Type",
+          breaks=c("Control","Hot_control", "Treatment"),
+          labels=c("Cold-Cold","Hot-Hot", "Cold-Hot"),
+          values=c("#4477AA","#d57d2c", "#76b183")) +
+      scale_fill_manual(name="Type",
+          breaks=c("Control","Hot_control", "Treatment"),
+          labels=c("Cold-Cold","Hot-Hot", "Cold-Hot"),
+          values=c("#4477AA50","#d57d2c50","#76b18350")) +
+      facet_wrap(. ~ metric,scales = "free") +
+      coord_cartesian(xlim = c(1, NA)) +
+      stat_compare_means(size=3, label.x=.7) +
+      theme_classic() +
+        theme(
+    strip.background = element_blank(),
+    panel.grid.minor.x = element_line(size = .1, color = "grey"),
+    axis.title.x = element_blank(),
+    axis.title.y = element_text(size=10),
+    axis.text.x = element_text(angle = 45, hjust = 1),
+    # Increase plot size
+    plot.title = element_text(size = 10),
+    axis.text = element_text(size = 8),
+    axis.title = element_text(size = 8)
+      ) +
+  ylab("Alpha diversity")
+```
+
+### Post-Transplant_1 samples
+
+```{r alpha_div_plot_5, comment="", message=FALSE, warning=FALSE, fig.height=7, fig.width=10, fig.fullwidth=TRUE}
+alpha_div %>%
+  pivot_longer(-sample, names_to = "metric", values_to = "value") %>%
+  left_join(., sample_metadata, by = join_by(sample == Tube_code)) %>%
+  filter(time_point=="5_Post-FMT1") %>%
+  mutate(metric=factor(metric,levels=c("richness","neutral","phylogenetic","functional"))) %>%
+      ggplot(aes(y = value, x = type, group=type, color=type, fill=type)) +
+      geom_boxplot(outlier.shape = NA) +
+      geom_jitter(alpha=0.5) +
+      scale_color_manual(name="Type",
+          breaks=c("Control","Hot_control", "Treatment"),
+          labels=c("Cold-Cold","Hot-Hot", "Cold-Hot"),
+          values=c("#4477AA","#d57d2c", "#76b183")) +
+      scale_fill_manual(name="Type",
+          breaks=c("Control","Hot_control", "Treatment"),
+          labels=c("Cold-Cold","Hot-Hot", "Cold-Hot"),
+          values=c("#4477AA50","#d57d2c50","#76b18350")) +
+      facet_wrap(. ~ metric,scales = "free") +
+      coord_cartesian(xlim = c(1, NA)) +
+      stat_compare_means(size=3, label.x=.7) +
+      theme_classic() +
+        theme(
+    strip.background = element_blank(),
+    panel.grid.minor.x = element_line(size = .1, color = "grey"),
+    axis.title.x = element_blank(),
+    axis.title.y = element_text(size=10),
+    axis.text.x = element_text(angle = 45, hjust = 1),
+    # Increase plot size
+    plot.title = element_text(size = 10),
+    axis.text = element_text(size = 8),
+    axis.title = element_text(size = 8)
+      ) +
+  ylab("Alpha diversity")
+```
+
+### Post-Transplant_2 samples
+
+```{r alpha_div_plot_6, comment="", message=FALSE, warning=FALSE, fig.height=7, fig.width=10, fig.fullwidth=TRUE}
+alpha_div %>%
+  pivot_longer(-sample, names_to = "metric", values_to = "value") %>%
+  left_join(., sample_metadata, by = join_by(sample == Tube_code)) %>%
+  filter(time_point=="6_Post-FMT2") %>%
+  mutate(metric=factor(metric,levels=c("richness","neutral","phylogenetic","functional"))) %>%
+      ggplot(aes(y = value, x = type, group=type, color=type, fill=type)) +
+      geom_boxplot(outlier.shape = NA) +
+      geom_jitter(alpha=0.5) +
+      scale_color_manual(name="Type",
+          breaks=c("Control","Hot_control", "Treatment"),
+          labels=c("Cold-control","Warm-control", "Cold-intervention"),
+          values=c("#4477AA","#d57d2c", "#76b183")) +
+      scale_fill_manual(name="Type",
+          breaks=c("Control","Hot_control", "Treatment"),
+          labels=c("Cold-control","Warm-control", "Cold-intervention"),
+          values=c("#4477AA50","#d57d2c50","#76b18350")) +
+      facet_wrap(. ~ metric,scales = "free") +
+      coord_cartesian(xlim = c(1, NA)) +
+      stat_compare_means(size=3, label.x=.7) +
+      theme_classic() +
+        theme(
+    strip.background = element_blank(),
+    panel.grid.minor.x = element_line(size = .1, color = "grey"),
+    axis.title.x = element_blank(),
+    axis.title.y = element_text(size=10),
+    axis.text.x = element_text(angle = 45, hjust = 1),
+    # Increase plot size
+    plot.title = element_text(size = 10),
+    axis.text = element_text(size = 8),
+    axis.title = element_text(size = 8)
+      ) +
+  ylab("Alpha diversity")
+```
+
+## Beta diversity
+
+```{r beta_div, comment="", message=FALSE, warning=FALSE, eval=FALSE}
+beta_q0n <- genome_counts_filt %>%
+  column_to_rownames(., "genome") %>%
+  hillpair(., q = 0)
+
+beta_q1n <- genome_counts_filt %>%
+  column_to_rownames(., "genome") %>%
+  hillpair(., q = 1)
+
+beta_q1p <- genome_counts_filt %>%
+  column_to_rownames(., "genome") %>%
+  hillpair(., q = 1, tree = genome_tree)
+
+beta_q1f <- genome_counts_filt %>%
+  column_to_rownames(., "genome") %>%
+  hillpair(., q = 1, dist = dist)
+```
