@@ -37,7 +37,7 @@ RStudio > New Project > Version Control > Git
 
 And indicating the following git repository:
 
-> https://github.com/alberdilab/Podarcis_adaptation.git
+> https://github.com/alberdilab/lizard_fmt_effectiveness.git
 
 Once the R project has been created, follow the instructions and code chunks shown in this webbook.
 
