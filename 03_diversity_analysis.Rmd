@@ -35,26 +35,10 @@ phylogenetic <- genome_counts_filt %>%
   dplyr::rename(phylogenetic = 1) %>%
   rownames_to_column(var = "sample")
 
-# Aggregate basal GIFT into elements
-dist <- genome_gifts %>%
-  to.elements(., GIFT_db3) %>%
-  traits2dist(., method = "gower")
-
-functional <- genome_counts_filt %>%
-  column_to_rownames(var = "genome") %>%
-  dplyr::select(where(~ !all(. == 0))) %>%
-  hilldiv(., q = 1, dist = dist) %>%
-  t() %>%
-  as.data.frame() %>%
-  dplyr::rename(functional = 1) %>%
-  rownames_to_column(var = "sample") %>%
-  mutate(functional = if_else(is.nan(functional), 1, functional))
-
 # Merge all metrics
 alpha_div <- richness %>%
   full_join(neutral, by = join_by(sample == sample)) %>%
-  full_join(phylogenetic, by = join_by(sample == sample)) %>%
-  full_join(functional, by = join_by(sample == sample))
+  full_join(phylogenetic, by = join_by(sample == sample))
 ```
 
 ### Acclimation samples
@@ -64,7 +48,7 @@ alpha_div %>%
   pivot_longer(-sample, names_to = "metric", values_to = "value") %>%
   left_join(., sample_metadata, by = join_by(sample == Tube_code)) %>%
   filter(time_point=="1_Acclimation") %>%
-  mutate(metric=factor(metric,levels=c("richness","neutral","phylogenetic","functional"))) %>%
+  mutate(metric=factor(metric,levels=c("richness","neutral","phylogenetic"))) %>%
       ggplot(aes(y = value, x = Population, group=Population, color=Population, fill=Population)) +
       geom_boxplot(outlier.shape = NA) +
       geom_jitter(alpha=0.5) +
@@ -101,7 +85,7 @@ alpha_div %>%
   pivot_longer(-sample, names_to = "metric", values_to = "value") %>%
   left_join(., sample_metadata, by = join_by(sample == Tube_code)) %>%
   filter(time_point=="2_Antibiotics") %>%
-  mutate(metric=factor(metric,levels=c("richness","neutral","phylogenetic","functional"))) %>%
+  mutate(metric=factor(metric,levels=c("richness","neutral","phylogenetic"))) %>%
       ggplot(aes(y = value, x = Population, group=Population, color=Population, fill=Population)) +
       geom_boxplot(outlier.shape = NA) +
       geom_jitter(alpha=0.5) +
@@ -138,7 +122,7 @@ alpha_div %>%
   pivot_longer(-sample, names_to = "metric", values_to = "value") %>%
   left_join(., sample_metadata, by = join_by(sample == Tube_code)) %>%
   filter(time_point=="3_Transplant1") %>%
-  mutate(metric=factor(metric,levels=c("richness","neutral","phylogenetic","functional"))) %>%
+  mutate(metric=factor(metric,levels=c("richness","neutral","phylogenetic"))) %>%
       ggplot(aes(y = value, x = type, group=type, color=type, fill=type)) +
       geom_boxplot(outlier.shape = NA) +
       geom_jitter(alpha=0.5) +
@@ -175,7 +159,7 @@ alpha_div %>%
   pivot_longer(-sample, names_to = "metric", values_to = "value") %>%
   left_join(., sample_metadata, by = join_by(sample == Tube_code)) %>%
   filter(time_point=="4_Transplant2") %>%
-  mutate(metric=factor(metric,levels=c("richness","neutral","phylogenetic","functional"))) %>%
+  mutate(metric=factor(metric,levels=c("richness","neutral","phylogenetic"))) %>%
       ggplot(aes(y = value, x = type, group=type, color=type, fill=type)) +
       geom_boxplot(outlier.shape = NA) +
       geom_jitter(alpha=0.5) +
@@ -212,7 +196,7 @@ alpha_div %>%
   pivot_longer(-sample, names_to = "metric", values_to = "value") %>%
   left_join(., sample_metadata, by = join_by(sample == Tube_code)) %>%
   filter(time_point=="5_Post-FMT1") %>%
-  mutate(metric=factor(metric,levels=c("richness","neutral","phylogenetic","functional"))) %>%
+  mutate(metric=factor(metric,levels=c("richness","neutral","phylogenetic"))) %>%
       ggplot(aes(y = value, x = type, group=type, color=type, fill=type)) +
       geom_boxplot(outlier.shape = NA) +
       geom_jitter(alpha=0.5) +
@@ -249,7 +233,7 @@ alpha_div %>%
   pivot_longer(-sample, names_to = "metric", values_to = "value") %>%
   left_join(., sample_metadata, by = join_by(sample == Tube_code)) %>%
   filter(time_point=="6_Post-FMT2") %>%
-  mutate(metric=factor(metric,levels=c("richness","neutral","phylogenetic","functional"))) %>%
+  mutate(metric=factor(metric,levels=c("richness","neutral","phylogenetic"))) %>%
       ggplot(aes(y = value, x = type, group=type, color=type, fill=type)) +
       geom_boxplot(outlier.shape = NA) +
       geom_jitter(alpha=0.5) +
@@ -293,8 +277,4 @@ beta_q1n <- genome_counts_filt %>%
 beta_q1p <- genome_counts_filt %>%
   column_to_rownames(., "genome") %>%
   hillpair(., q = 1, tree = genome_tree)
-
-beta_q1f <- genome_counts_filt %>%
-  column_to_rownames(., "genome") %>%
-  hillpair(., q = 1, dist = dist)
 ```

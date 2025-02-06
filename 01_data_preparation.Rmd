@@ -145,7 +145,11 @@ read_counts <- read_counts %>%
 
 #Metadata
 sample_metadata <- sample_metadata %>%
-  filter(time_point != "0_Wild")
+  filter(time_point != "0_Wild")%>%
+  filter(Tube_code != "AD16") %>%
+  filter(Tube_code != "AD23") %>%
+  filter(Tube_code != "AD25") %>%
+  filter(Tube_code != "AD91")
 
 #Coverage_table
 columns_to_exclude <- c("AD16","AD23", "AD25", "AD91", "AFU87", "AFU88", "AFU91", "AFU92", "AFU93", "AFU94", "AFU98", "AFU95", "AFU99", "AFU96", "AFV02", "AFU97", "AFV03", "AFV04", "AFV01", "AFV05", "AFV06", "AFV07",
@@ -200,12 +204,6 @@ genome_counts <- read_counts %>%
 readlength=150
 genome_counts_filt <- read_counts_filt %>%
   mutate(across(where(is.numeric), ~ . / (genome_metadata$length / readlength) ))
-```
-
-### Distill annotations into GIFTs 
-
-```{r distill_annotations, comment="", message=FALSE, warning=FALSE, eval=FALSE}
-genome_gifts <- distill(genome_annotations,GIFT_db3,genomecol=2,annotcol=c(9,10,19))
 ```
 
 ## Load data statistics
@@ -527,7 +525,6 @@ save(sample_metadata,
      genome_counts, 
      genome_counts_filt, 
      genome_tree,
-     genome_gifts, 
      phylum_colors,
      data_stats,
      file = "data/data.Rdata")
