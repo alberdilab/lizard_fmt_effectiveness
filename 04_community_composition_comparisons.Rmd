@@ -1,4 +1,4 @@
-## Permanovas
+# Community comparisons
 
 #### Load required data
 
