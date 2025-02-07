@@ -40,7 +40,7 @@ transplant_2-samples
 post-transplant_1-samples
 post-transplant_2-samples
 beta-diversity
-permanovas
+community-comparisons
 load-required-data
 do-the-antibiotics-work
 antibiotics

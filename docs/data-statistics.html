@@ -2088,11 +2088,11 @@ color: #a52929;
 <li class="chapter" data-level="4.1.6" data-path="diversity-analysis.html"><a href="diversity-analysis.html#post-transplant_2-samples"><i class="fa fa-check"></i><b>4.1.6</b> Post-Transplant_2 samples</a></li>
 </ul></li>
 <li class="chapter" data-level="4.2" data-path="diversity-analysis.html"><a href="diversity-analysis.html#beta-diversity"><i class="fa fa-check"></i><b>4.2</b> Beta diversity</a></li>
-<li class="chapter" data-level="4.3" data-path="diversity-analysis.html"><a href="diversity-analysis.html#permanovas"><i class="fa fa-check"></i><b>4.3</b> Permanovas</a>
-<ul>
-<li class="chapter" data-level="4.3.1" data-path="diversity-analysis.html"><a href="diversity-analysis.html#do-the-antibiotics-work"><i class="fa fa-check"></i><b>4.3.1</b> 1. Do the antibiotics work?</a></li>
-<li class="chapter" data-level="4.3.2" data-path="diversity-analysis.html"><a href="diversity-analysis.html#does-the-fmt-work"><i class="fa fa-check"></i><b>4.3.2</b> 2. Does the FMT work?</a></li>
 </ul></li>
+<li class="chapter" data-level="5" data-path="community-comparisons.html"><a href="community-comparisons.html"><i class="fa fa-check"></i><b>5</b> Community comparisons</a>
+<ul>
+<li class="chapter" data-level="5.0.1" data-path="community-comparisons.html"><a href="community-comparisons.html#do-the-antibiotics-work"><i class="fa fa-check"></i><b>5.0.1</b> 1. Do the antibiotics work?</a></li>
+<li class="chapter" data-level="5.0.2" data-path="community-comparisons.html"><a href="community-comparisons.html#does-the-fmt-work"><i class="fa fa-check"></i><b>5.0.2</b> 2. Does the FMT work?</a></li>
 </ul></li>
 <li class="divider"></li>
 <li><a href="https://www.alberdilab.dk" target="blank"><b>www.alberdilab.dk</b></a></li>
@@ -2226,8 +2226,8 @@ color: #a52929;
 
     <script>
 
-      function styleCell_8ol3isakmxf3rb09c566(i, j, css_id) {
-          var table = document.getElementById("tinytable_8ol3isakmxf3rb09c566");
+      function styleCell_n12uzp0t6ahuuhvcvf3v(i, j, css_id) {
+          var table = document.getElementById("tinytable_n12uzp0t6ahuuhvcvf3v");
           var cell = table.rows[i]?.cells[j];  // Safe navigation to avoid errors
           if (cell) {
               console.log(`Styling cell at (${i}, ${j}) with class ${css_id}`);
@@ -2237,7 +2237,7 @@ color: #a52929;
           }
       }
       function insertSpanRow(i, colspan, content) {
-        var table = document.getElementById('tinytable_8ol3isakmxf3rb09c566');
+        var table = document.getElementById('tinytable_n12uzp0t6ahuuhvcvf3v');
         var newRow = table.insertRow(i);
         var newCell = newRow.insertCell(0);
         newCell.setAttribute("colspan", colspan);
@@ -2245,8 +2245,8 @@ color: #a52929;
         // this may be unsafe, but innerText does not interpret <br>
         newCell.innerHTML = content;
       }
-      function spanCell_8ol3isakmxf3rb09c566(i, j, rowspan, colspan) {
-        var table = document.getElementById("tinytable_8ol3isakmxf3rb09c566");
+      function spanCell_n12uzp0t6ahuuhvcvf3v(i, j, rowspan, colspan) {
+        var table = document.getElementById("tinytable_n12uzp0t6ahuuhvcvf3v");
         const targetRow = table.rows[i];
         const targetCell = targetRow.cells[j];
         for (let r = 0; r < rowspan; r++) {
@@ -2276,14 +2276,14 @@ color: #a52929;
       window.addEventListener('load', function () {
           var cellsToStyle = [
             // tinytable style arrays after
-          { positions: [ { i: 0, j: 0 }, { i: 0, j: 1 }, { i: 0, j: 2 }, { i: 0, j: 3 }, { i: 0, j: 4 },  ], css_id: 'tinytable_css_qp62xsiplytfzrysms2i',}, 
-          { positions: [ { i: 136, j: 0 }, { i: 136, j: 1 }, { i: 136, j: 2 }, { i: 136, j: 3 }, { i: 136, j: 4 },  ], css_id: 'tinytable_css_9v7fixk9bi6vz2trxaav',}, 
+          { positions: [ { i: 0, j: 0 }, { i: 0, j: 1 }, { i: 0, j: 2 }, { i: 0, j: 3 }, { i: 0, j: 4 },  ], css_id: 'tinytable_css_eypp1muwjv8jbia4e7cl',}, 
+          { positions: [ { i: 136, j: 0 }, { i: 136, j: 1 }, { i: 136, j: 2 }, { i: 136, j: 3 }, { i: 136, j: 4 },  ], css_id: 'tinytable_css_b5fkdnoevneo3rgiyerh',}, 
           ];
 
           // Loop over the arrays to style the cells
           cellsToStyle.forEach(function (group) {
               group.positions.forEach(function (cell) {
-                  styleCell_8ol3isakmxf3rb09c566(cell.i, cell.j, group.css_id);
+                  styleCell_n12uzp0t6ahuuhvcvf3v(cell.i, cell.j, group.css_id);
               });
           });
       });
@@ -2291,11 +2291,11 @@ color: #a52929;
 
     <style>
 
-.table td.tinytable_css_qp62xsiplytfzrysms2i, .table th.tinytable_css_qp62xsiplytfzrysms2i { border-top: solid #d3d8dc 0.1em; border-bottom: solid #d3d8dc 0.05em; }
-.table td.tinytable_css_9v7fixk9bi6vz2trxaav, .table th.tinytable_css_9v7fixk9bi6vz2trxaav { border-bottom: solid #d3d8dc 0.1em; }
+.table td.tinytable_css_eypp1muwjv8jbia4e7cl, .table th.tinytable_css_eypp1muwjv8jbia4e7cl { border-top: solid #d3d8dc 0.1em; border-bottom: solid #d3d8dc 0.05em; }
+.table td.tinytable_css_b5fkdnoevneo3rgiyerh, .table th.tinytable_css_b5fkdnoevneo3rgiyerh { border-bottom: solid #d3d8dc 0.1em; }
 </style>
     <div class="container">
-      <table class="table table-borderless" id="tinytable_8ol3isakmxf3rb09c566" style="width: auto; margin-left: auto; margin-right: auto;" data-quarto-disable-processing="true">
+      <table class="table table-borderless" id="tinytable_n12uzp0t6ahuuhvcvf3v" style="width: auto; margin-left: auto; margin-right: auto;" data-quarto-disable-processing="true">
         <thead>
         
               <tr>
