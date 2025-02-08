@@ -179,7 +179,7 @@ beta_div_phylo_treat<-hillpair(data=treat.counts, q=1, tree=genome_tree)
 ```{r beta_div_neutral_treat_1_arrange, echo=TRUE, results=FALSE,message=FALSE, warning=FALSE, comments=FALSE}
 #Arrange of metadata dataframe
 treat_arrange<-treat[labels(beta_div_neutral_treat$S),]
-treat_arrange$type_time <- interaction(treat_arrange$type, treat_arrange$time_point)
+treat_arrange$population_time <- interaction(treat_arrange$Population, treat_arrange$time_point)
 ```
 
 ##### Richness
@@ -195,7 +195,7 @@ adonis2(formula=beta_div_richness_treat$S ~ time_point*Population, data=treat[la
 ```
 
 ```{r beta_div_richness_treat_4_pairwise, echo=TRUE, warning=FALSE, comments="", message=FALSE}
-pairwise <- pairwise.adonis(beta_div_richness_treat$S, treat_arrange$type_time, perm=999)
+pairwise <- pairwise.adonis(beta_div_richness_treat$S, treat_arrange$population_time, perm=999)
 pairwise%>%
   tt()
 ```
@@ -213,7 +213,7 @@ adonis2(formula=beta_div_neutral_treat$S ~ time_point*Population, data=treat[lab
 ```
 
 ```{r beta_div_neutral_treat_4_pairwise, echo=TRUE, warning=FALSE, comments="", message=FALSE}
-pairwise <- pairwise.adonis(beta_div_neutral_treat$S, treat_arrange$type_time, perm=999)
+pairwise <- pairwise.adonis(beta_div_neutral_treat$S, treat_arrange$population_time, perm=999)
 pairwise%>%
   tt()
 ```
@@ -231,7 +231,7 @@ adonis2(formula=beta_div_phylo_treat$S ~ time_point*Population, data=treat[label
 ```
 
 ```{r beta_div_phylo_treat_4_pairwise, echo=TRUE, warning=FALSE, comments="", message=FALSE}
-pairwise <- pairwise.adonis(beta_div_phylo_treat$S, treat_arrange$type_time, perm=999)
+pairwise <- pairwise.adonis(beta_div_phylo_treat$S, treat_arrange$population_time, perm=999)
 pairwise%>%
   tt()
 ```
@@ -258,15 +258,15 @@ beta_phylo_nmds_treat <- beta_div_phylo_treat$S %>%
 
 ```{r beta_neutral_nmds_treat_plot, echo=FALSE, results=FALSE}
 p0<-beta_richness_nmds_treat %>%
-			group_by(individual) %>%
+			group_by(individual, Population) %>%
 			mutate(x_cen = mean(NMDS1, na.rm = TRUE)) %>%
 			mutate(y_cen = mean(NMDS2, na.rm = TRUE)) %>%
 			ungroup() %>%
-			ggplot(., aes(x=NMDS1,y=NMDS2, color=type, shape=time_point)) +
-        scale_color_manual(name="Type",
-                       breaks=c("Control", "Hot_control", "Treatment"),
-                       labels=c("Cold-Cold", "Hot-Hot", "Cold-Hot"),
-                       values=c("#4477AA","#d57d2c","#76b183")) +
+			ggplot(., aes(x=NMDS1,y=NMDS2, color=Population, shape=type)) +
+        scale_color_manual(name="Population",
+                     breaks=c("Cold_wet","Hot_dry"),
+                     labels=c("Cold","Hot"),
+                     values=c('#008080',"#d57d2c")) +
 				geom_point(size=2) +
 				geom_segment(aes(x=x_cen, y=y_cen, xend=NMDS1, yend=NMDS2), alpha=0.2) +
         labs(y = "NMDS2", x="NMDS1 \n Richness beta diversity") +
@@ -274,15 +274,15 @@ p0<-beta_richness_nmds_treat %>%
 				theme(legend.position="none")
 
 p1<-beta_neutral_nmds_treat %>%
-			group_by(individual) %>%
+			group_by(individual, Population) %>%
 			mutate(x_cen = mean(NMDS1, na.rm = TRUE)) %>%
 			mutate(y_cen = mean(NMDS2, na.rm = TRUE)) %>%
 			ungroup() %>%
-			ggplot(., aes(x=NMDS1,y=NMDS2, color=type, shape=time_point)) +
-        scale_color_manual(name="Type",
-                       breaks=c("Control", "Hot_control", "Treatment"),
-                       labels=c("Cold-Cold", "Hot-Hot", "Cold-Hot"),
-                       values=c("#4477AA","#d57d2c","#76b183")) +
+			ggplot(., aes(x=NMDS1,y=NMDS2, color=Population, shape=type)) +
+        scale_color_manual(name="Population",
+                     breaks=c("Cold_wet","Hot_dry"),
+                     labels=c("Cold","Hot"),
+                     values=c('#008080',"#d57d2c")) +
 				geom_point(size=2) +
 				geom_segment(aes(x=x_cen, y=y_cen, xend=NMDS1, yend=NMDS2), alpha=0.2) +
         labs(y = "NMDS2", x="NMDS1 \n Neutral beta diversity") +
@@ -290,18 +290,18 @@ p1<-beta_neutral_nmds_treat %>%
 				theme(legend.position="none")
   
 p2<-beta_phylo_nmds_treat %>%
-			group_by(individual) %>%
+			group_by(individual, Population) %>%
 			mutate(x_cen = mean(NMDS1, na.rm = TRUE)) %>%
 			mutate(y_cen = mean(NMDS2, na.rm = TRUE)) %>%
 			ungroup() %>%
-			ggplot(., aes(x=NMDS1,y=NMDS2, color=type, shape=time_point)) +
-				scale_color_manual(name="Type",
-                       breaks=c("Control", "Hot_control", "Treatment"),
-                       labels=c("Cold-Cold", "Hot-Hot", "Cold-Hot"),
-                       values=c("#4477AA","#d57d2c","#76b183")) +
+			ggplot(., aes(x=NMDS1,y=NMDS2, color=Population, shape=type)) +
+        scale_color_manual(name="Population",
+                     breaks=c("Cold_wet","Hot_dry"),
+                     labels=c("Cold","Hot"),
+                     values=c('#008080',"#d57d2c")) +
 				geom_point(size=2) +
 				geom_segment(aes(x=x_cen, y=y_cen, xend=NMDS1, yend=NMDS2), alpha=0.2) +
-        labs(y= element_blank (), x="NMDS1 \n Phylogenetic beta diversity") +
+        labs(y = "NMDS2", x="NMDS1 \n Phylogenetic beta diversity") +
 				theme_classic() +
 				theme(legend.position="none")
 ```
@@ -1504,14 +1504,17 @@ p0<-beta_richness_nmds_all_comparison %>%
   ungroup() %>%
   #filter(!is.na(type)) %>%
   filter(type!="Hot_control") %>%
-  ggplot(., aes(x=NMDS1,y=NMDS2, color=time_point)) +
+  ggplot(., aes(x=NMDS1,y=NMDS2, color=time_point, shape=type)) +
   scale_color_manual(name="time_point",
                      breaks=c("1_Acclimation", "3_Transplant1", "4_Transplant2", "2_Antibiotics", "5_Post-FMT1", "6_Post-FMT2"),
                      labels=c("Acclimation", "Transplant", "Transplant", "Antibiotics", "Post1", "Post2"),
                      values=c("#8c97cc","#e1d096","#e1d096", "#96e199","#d096e1", "#f2ae8b")) +
-  facet_wrap(. ~ type) +
+   scale_shape_manual(name="type",
+              breaks=c("Control", "Treatment"),
+              values=c(16, 17))+
+  #facet_wrap(. ~ type) +
   geom_point(size=2) +
-  geom_segment(aes(x=x_cen, y=y_cen, xend=NMDS1, yend=NMDS2), alpha=0.2) +
+  geom_segment(aes(x=x_cen, y=y_cen, xend=NMDS1, yend=NMDS2), alpha=0.4) +
   labs(y = "NMDS2", x="NMDS1 \n Richness beta diversity") +
   theme_classic() +
   theme(legend.position="right")
@@ -1523,16 +1526,18 @@ p1<-beta_neutral_nmds_all_comparison %>%
   ungroup() %>%
   #filter(!is.na(type)) %>%
   filter(type!="Hot_control") %>%
-  ggplot(., aes(x=NMDS1,y=NMDS2, color=time_point, shape=type, label=individual)) +
+  ggplot(., aes(x=NMDS1,y=NMDS2, color=time_point, shape=type)) +
   scale_color_manual(name="time_point",
                      breaks=c("1_Acclimation", "3_Transplant1", "4_Transplant2", "2_Antibiotics", "5_Post-FMT1", "6_Post-FMT2"),
                      labels=c("Acclimation", "Transplant", "Transplant", "Antibiotics", "Post1", "Post2"),
                      values=c("#8c97cc","#e1d096","#e1d096", "#96e199","#d096e1", "#f2ae8b")) +
+   scale_shape_manual(name="type",
+              breaks=c("Control", "Treatment"),
+              values=c(16, 17))+
   #facet_wrap(. ~ type) +
-  geom_point(size=4) +
-  geom_segment(aes(x=x_cen, y=y_cen, xend=NMDS1, yend=NMDS2), alpha=0.6) +
+  geom_point(size=2) +
+  geom_segment(aes(x=x_cen, y=y_cen, xend=NMDS1, yend=NMDS2), alpha=0.4) +
   labs(y = "NMDS2", x="NMDS1 \n Neutral beta diversity") +
-  geom_text()+
   theme_classic() +
   theme(legend.position="right")
 
@@ -1543,21 +1548,23 @@ p2<-beta_phylo_nmds_all_comparison %>%
   ungroup() %>%
   #filter(!is.na(type)) %>%
   filter(type!="Hot_control") %>%
-  ggplot(., aes(x=NMDS1,y=NMDS2, color=time_point, shape=type, label=individual)) +
+  ggplot(., aes(x=NMDS1,y=NMDS2, color=time_point, shape=type)) +
   scale_color_manual(name="time_point",
                      breaks=c("1_Acclimation", "3_Transplant1", "4_Transplant2", "2_Antibiotics", "5_Post-FMT1", "6_Post-FMT2"),
                      labels=c("Acclimation", "Transplant", "Transplant", "Antibiotics", "Post1", "Post2"),
                      values=c("#8c97cc","#e1d096","#e1d096", "#96e199","#d096e1", "#f2ae8b")) +
+  scale_shape_manual(name="type",
+              breaks=c("Control", "Treatment"),
+              values=c(16, 17))+
   #facet_wrap(. ~ type) +
-  geom_point(size=4) +
-  geom_segment(aes(x=x_cen, y=y_cen, xend=NMDS1, yend=NMDS2), alpha=0.6) +
+  geom_point(size=2) +
+  geom_segment(aes(x=x_cen, y=y_cen, xend=NMDS1, yend=NMDS2), alpha=0.4) +
   labs(y = "NMDS2", x="NMDS1 \n Phylogenetic beta diversity") +
-  geom_text()+
   theme_classic() +
   theme(legend.position="right")
 
 ```
 
-```{r beta_neutral_nmds_plot_all_comparison_final, echo=FALSE, results=TRUE, fig.height=8, fig.width=10, fig.fullwidth=TRUE}
-ggarrange(p0, p1, p2, ncol=3, nrow=1, common.legend = TRUE, legend="right")
+```{r beta_neutral_nmds_plot_all_comparison_final, echo=FALSE, results=TRUE, fig.height=10, fig.width=16, fig.fullwidth=TRUE}
+ggarrange(p0, p1, p2, ncol=2, nrow=2, common.legend = TRUE, legend="right")
 ```
