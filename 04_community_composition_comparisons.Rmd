@@ -650,6 +650,356 @@ p2<-beta_phylo_nmds_transplant3 %>%
 ggarrange(p0, p1, p2, ncol=3, nrow=1, common.legend = TRUE, legend="right")
 ```
 
+#### FMT1 vs transplant (FMT1 & FMT2 together)
+
+```{r transplant8_data, eho=FALSE, results=TRUE}
+transplant8<-transplants_metadata%>%
+  filter(time_point == "4_Transplant2" | time_point == "5_Post-FMT1"| time_point == "3_Transplant1")%>%
+  column_to_rownames("newID")
+
+transplant8_nmds <- transplants_metadata %>%
+  filter(time_point == "4_Transplant2" | time_point == "5_Post-FMT1"| time_point == "3_Transplant1")
+
+transplant8_counts<-full_counts %>%
+  filter(time_point == "4_Transplant2" | time_point == "5_Post-FMT1"| time_point == "3_Transplant1") %>%
+  subset(select=-c(315:324)) %>%
+  column_to_rownames("newID")%>%
+  subset(select=-c(1))%>%
+  t() %>%
+  as.data.frame() %>%
+  mutate_if(is.character, as.numeric)
+
+transplant8_counts <- transplant8_counts[, !names(transplant8_counts) %in% c("AD45 _ LI1_2nd_2", "AD48 _ LI1_2nd_6")]
+
+identical(sort(colnames(transplant8_counts)),sort(as.character(rownames(transplant8))))
+```
+
+#### Number of samples used
+
+```{r beta_div_neutral_transplant8_samples_1, echo=FALSE, results = TRUE, message=FALSE, warning=FALSE, comments=FALSE}
+nrow(transplant8)
+```
+
+```{r beta_div_neutral_transplant8_1, echo=TRUE, results=FALSE,message=FALSE, warning=FALSE, comments=FALSE, eval=FALSE}
+beta_div_richness_transplant8<-hillpair(data=transplant8_counts, q=0)
+beta_div_neutral_transplant8<-hillpair(data=transplant8_counts, q=1)
+beta_div_phylo_transplant8<-hillpair(data=transplant8_counts, q=1, tree=genome_tree)
+```
+
+```{r beta_div_neutral_transplant8_2, echo=TRUE, results=FALSE,message=FALSE, warning=FALSE, comments=FALSE}
+#Arrange of metadata dataframe
+transplant8_arrange<-transplant8[labels(beta_div_neutral_transplant8$S),]
+transplant8_arrange <- transplant8_arrange %>%
+  mutate(time_point = recode(time_point,
+                             "3_Transplant1" = "Transplant",
+                             "4_Transplant2" = "Transplant"))
+
+transplant8_arrange$type_time <- interaction(transplant8_arrange$type, transplant8_arrange$time_point)
+```
+
+##### Richness
+
+```{r beta_richness_permanova_transplant8_4, echo=TRUE, warning=FALSE, comments="", message=FALSE}
+adonis2(formula=beta_div_richness_transplant8$S ~ Population*time_point+type, data=transplant8[labels(beta_div_richness_transplant8$S),], permutations=999) %>%
+  as.matrix() %>%
+  kable()
+```
+
+```{r beta_richness_permanova_transplant8_5, echo=TRUE, warning=FALSE, comments="", message=FALSE}
+pairwise<-pairwise.adonis(beta_div_richness_transplant8$S,transplant8_arrange$type_time, perm=999)
+pairwise%>%
+  tt()
+```
+
+##### Neutral
+
+```{r beta_neutral_permanova_transplant8_4, echo=TRUE, warning=FALSE, comments="", message=FALSE}
+adonis2(formula=beta_div_neutral_transplant8$S ~ time_point*type, data=transplant8[labels(beta_div_neutral_transplant8$S),], permutations=999) %>%
+  as.matrix() %>%
+  kable()
+```
+
+```{r beta_neutral_permanova_transplant8_5, echo=TRUE, warning=FALSE, comments="", message=FALSE}
+pairwise<-pairwise.adonis(beta_div_neutral_transplant8$S,transplant8_arrange$type_time, perm=999)
+pairwise%>%
+  tt()
+```
+
+##### Phylogenetic
+
+```{r beta_phylo_permanova_transplant8_4, echo=TRUE, warning=FALSE, comments="", message=FALSE}
+adonis2(formula=beta_div_phylo_transplant8$S ~ time_point+type, data=transplant8[labels(beta_div_phylo_transplant8$S),], permutations=999) %>%
+  as.matrix() %>%
+  kable()
+```
+
+```{r beta_phylo_permanova_transplant8_5, echo=TRUE, warning=FALSE, comments="", message=FALSE}
+pairwise<-pairwise.adonis(beta_div_phylo_transplant8$S,transplant8_arrange$type_time, perm=999)
+pairwise%>%
+  tt()
+```
+
+```{r beta_neutral_nmds_transplant8, echo=TRUE, warning=FALSE, comments="", message=FALSE, results="hide"}
+beta_richness_nmds_transplant8 <- beta_div_richness_transplant8$S %>%
+  metaMDS(.,trymax = 500, k=2, verbosity=FALSE) %>%
+  scores() %>%
+  as_tibble(., rownames = "sample") %>%
+  left_join(transplant8_nmds, by = join_by(sample == newID))
+
+beta_neutral_nmds_transplant8 <- beta_div_neutral_transplant8$S %>%
+  metaMDS(.,trymax = 500, k=2, verbosity=FALSE) %>%
+  scores() %>%
+  as_tibble(., rownames = "sample") %>%
+  left_join(transplant8_nmds, by = join_by(sample == newID))
+
+beta_phylo_nmds_transplant8 <- beta_div_phylo_transplant8$S %>%
+  metaMDS(.,trymax = 500, k=2, verbosity=FALSE) %>%
+  scores() %>%
+  as_tibble(., rownames = "sample") %>%
+  left_join(transplant8_nmds, by = join_by(sample == newID))
+```
+
+```{r beta_neutral_nmds_transplant8_plot, eho=FALSE, results=FALSE}
+p0<-beta_richness_nmds_transplant8 %>%
+  group_by(type) %>%
+  mutate(x_cen = mean(NMDS1, na.rm = TRUE)) %>%
+  mutate(y_cen = mean(NMDS2, na.rm = TRUE)) %>%
+  ungroup() %>%
+  ggplot(., aes(x=NMDS1,y=NMDS2, color=type, shape=time_point)) +
+  scale_color_manual(name="Type",
+                     breaks=c("Control", "Hot_control", "Treatment"),
+                     labels=c("Cold-Cold", "Hot-Hot", "Cold-Hot"),
+                     values=c("#4477AA","#d57d2c","#76b183")) +
+  scale_shape_manual(name="time_point",
+                     breaks=c("5_Post-FMT1", "3_Transplant1", "4_Transplant2"),
+                     labels=c("Post1", "Transplant", "Transplant"),
+                     values=c("circle","square","square")) +
+  geom_point(size=2) +
+  geom_segment(aes(x=x_cen, y=y_cen, xend=NMDS1, yend=NMDS2), alpha=0.2) +
+  labs(y = "NMDS2", x="NMDS1 \n Richness beta diversity") +
+  theme_classic() +
+  theme(legend.position="none")
+
+p1<-beta_neutral_nmds_transplant8 %>%
+  group_by(type) %>%
+  mutate(x_cen = mean(NMDS1, na.rm = TRUE)) %>%
+  mutate(y_cen = mean(NMDS2, na.rm = TRUE)) %>%
+  ungroup() %>%
+  ggplot(., aes(x=NMDS1,y=NMDS2, color=type, shape=time_point)) +
+  scale_color_manual(name="Type",
+                     breaks=c("Control", "Hot_control", "Treatment"),
+                     labels=c("Cold-Cold", "Hot-Hot", "Cold-Hot"),
+                     values=c("#4477AA","#d57d2c","#76b183")) +
+  scale_shape_manual(name="time_point",
+                     breaks=c("5_Post-FMT1", "3_Transplant1", "4_Transplant2"),
+                     labels=c("Post1", "Transplant", "Transplant"),
+                     values=c("circle","square","square")) +
+  geom_point(size=2) +
+  geom_segment(aes(x=x_cen, y=y_cen, xend=NMDS1, yend=NMDS2), alpha=0.2) +
+  labs(y= element_blank (), x="NMDS1 \n Neutral beta diversity") +
+  theme_classic() +
+  theme(legend.position="none")
+
+p2<-beta_phylo_nmds_transplant8 %>%
+  group_by(type) %>%
+  mutate(x_cen = mean(NMDS1, na.rm = TRUE)) %>%
+  mutate(y_cen = mean(NMDS2, na.rm = TRUE)) %>%
+  ungroup() %>%
+  ggplot(., aes(x=NMDS1,y=NMDS2, color=type, shape=time_point)) +
+  scale_color_manual(name="Type",
+                     breaks=c("Control", "Hot_control", "Treatment"),
+                     labels=c("Cold-Cold", "Hot-Hot", "Cold-Hot"),
+                     values=c("#4477AA","#d57d2c","#76b183")) +
+  scale_shape_manual(name="time_point",
+                     breaks=c("5_Post-FMT1", "3_Transplant1", "4_Transplant2"),
+                     labels=c("Post1", "Transplant", "Transplant"),
+                     values=c("circle","square","square")) +
+  geom_point(size=2) +
+  geom_segment(aes(x=x_cen, y=y_cen, xend=NMDS1, yend=NMDS2), alpha=0.2) +
+  labs(y= element_blank (), x="NMDS1 \n Phylogenetic beta diversity") +
+  theme_classic() +
+  theme(legend.position="none")
+```
+
+```{r beta_neutral_nmds_plot_transplant8_final, echo=FALSE, results=TRUE, fig.height=8, fig.width=10, fig.fullwidth=TRUE}
+ggarrange(p0, p1, p2, ncol=3, nrow=1, common.legend = TRUE, legend="right")
+```
+
+#### FMT2 vs transplant (FMT1 & FMT2 together)
+
+```{r transplant9_data, eho=FALSE, results=TRUE}
+transplant9<-transplants_metadata%>%
+  filter(time_point == "4_Transplant2" | time_point == "6_Post-FMT2"| time_point == "3_Transplant1")%>%
+  column_to_rownames("newID")
+
+transplant9_nmds <- transplants_metadata %>%
+  filter(time_point == "4_Transplant2" | time_point == "6_Post-FMT2"| time_point == "3_Transplant1")
+
+transplant9_counts<-full_counts %>%
+  filter(time_point == "4_Transplant2" | time_point == "6_Post-FMT2"| time_point == "3_Transplant1") %>%
+  subset(select=-c(315:324)) %>%
+  column_to_rownames("newID")%>%
+  subset(select=-c(1))%>%
+  t() %>%
+  as.data.frame() %>%
+  mutate_if(is.character, as.numeric)
+
+transplant9_counts <- transplant9_counts[, !names(transplant9_counts) %in% c("AD45 _ LI1_2nd_2", "AD48 _ LI1_2nd_6")]
+
+identical(sort(colnames(transplant9_counts)),sort(as.character(rownames(transplant9))))
+```
+
+#### Number of samples used
+
+```{r beta_div_neutral_transplant9_samples_1, echo=FALSE, results = TRUE, message=FALSE, warning=FALSE, comments=FALSE}
+nrow(transplant9)
+```
+
+```{r beta_div_neutral_transplant9_1, echo=TRUE, results=FALSE,message=FALSE, warning=FALSE, comments=FALSE, eval=FALSE}
+beta_div_richness_transplant9<-hillpair(data=transplant9_counts, q=0)
+beta_div_neutral_transplant9<-hillpair(data=transplant9_counts, q=1)
+beta_div_phylo_transplant9<-hillpair(data=transplant9_counts, q=1, tree=genome_tree)
+```
+
+```{r beta_div_neutral_transplant9_2, echo=TRUE, results=FALSE,message=FALSE, warning=FALSE, comments=FALSE}
+#Arrange of metadata dataframe
+transplant9_arrange<-transplant9[labels(beta_div_neutral_transplant9$S),]
+transplant9_arrange <- transplant9_arrange %>%
+  mutate(time_point = recode(time_point,
+                             "3_Transplant1" = "Transplant",
+                             "4_Transplant2" = "Transplant"))
+
+transplant9_arrange$type_time <- interaction(transplant9_arrange$type, transplant9_arrange$time_point)
+```
+
+##### Richness
+
+```{r beta_richness_permanova_transplant9_4, echo=TRUE, warning=FALSE, comments="", message=FALSE}
+adonis2(formula=beta_div_richness_transplant9$S ~ Population*time_point+type, data=transplant9[labels(beta_div_richness_transplant9$S),], permutations=999) %>%
+  as.matrix() %>%
+  kable()
+```
+
+```{r beta_richness_permanova_transplant9_5, echo=TRUE, warning=FALSE, comments="", message=FALSE}
+pairwise<-pairwise.adonis(beta_div_richness_transplant9$S,transplant9_arrange$type_time, perm=999)
+pairwise%>%
+  tt()
+```
+
+##### Neutral
+
+```{r beta_neutral_permanova_transplant9_4, echo=TRUE, warning=FALSE, comments="", message=FALSE}
+adonis2(formula=beta_div_neutral_transplant9$S ~ Population+time_point*type, data=transplant9[labels(beta_div_neutral_transplant9$S),], permutations=999) %>%
+  as.matrix() %>%
+  kable()
+```
+
+```{r beta_neutral_permanova_transplant9_5, echo=TRUE, warning=FALSE, comments="", message=FALSE}
+pairwise<-pairwise.adonis(beta_div_neutral_transplant9$S,transplant9_arrange$type_time, perm=999)
+pairwise%>%
+  tt()
+```
+
+##### Phylogenetic
+
+```{r beta_phylo_permanova_transplant9_4, echo=TRUE, warning=FALSE, comments="", message=FALSE}
+adonis2(formula=beta_div_phylo_transplant9$S ~ Population+time_point+type, data=transplant9[labels(beta_div_phylo_transplant9$S),], permutations=999) %>%
+  as.matrix() %>%
+  kable()
+```
+
+```{r beta_phylo_permanova_transplant9_5, echo=TRUE, warning=FALSE, comments="", message=FALSE}
+pairwise<-pairwise.adonis(beta_div_phylo_transplant9$S,transplant9_arrange$type_time, perm=999)
+pairwise%>%
+  tt()
+```
+
+```{r beta_neutral_nmds_transplant9, echo=TRUE, warning=FALSE, comments="", message=FALSE, results="hide"}
+beta_richness_nmds_transplant9 <- beta_div_richness_transplant9$S %>%
+  metaMDS(.,trymax = 500, k=2, verbosity=FALSE) %>%
+  scores() %>%
+  as_tibble(., rownames = "sample") %>%
+  left_join(transplant9_nmds, by = join_by(sample == newID))
+
+beta_neutral_nmds_transplant9 <- beta_div_neutral_transplant9$S %>%
+  metaMDS(.,trymax = 500, k=2, verbosity=FALSE) %>%
+  scores() %>%
+  as_tibble(., rownames = "sample") %>%
+  left_join(transplant9_nmds, by = join_by(sample == newID))
+
+beta_phylo_nmds_transplant9 <- beta_div_phylo_transplant9$S %>%
+  metaMDS(.,trymax = 500, k=2, verbosity=FALSE) %>%
+  scores() %>%
+  as_tibble(., rownames = "sample") %>%
+  left_join(transplant9_nmds, by = join_by(sample == newID))
+```
+
+```{r beta_neutral_nmds_transplant9_plot, eho=FALSE, results=FALSE}
+p0<-beta_richness_nmds_transplant9 %>%
+  group_by(type) %>%
+  mutate(x_cen = mean(NMDS1, na.rm = TRUE)) %>%
+  mutate(y_cen = mean(NMDS2, na.rm = TRUE)) %>%
+  ungroup() %>%
+  ggplot(., aes(x=NMDS1,y=NMDS2, color=type, shape=time_point)) +
+  scale_color_manual(name="Type",
+                     breaks=c("Control", "Hot_control", "Treatment"),
+                     labels=c("Cold-Cold", "Hot-Hot", "Cold-Hot"),
+                     values=c("#4477AA","#d57d2c","#76b183")) +
+  scale_shape_manual(name="time_point",
+                     breaks=c("6_Post-FMT2", "3_Transplant1", "4_Transplant2"),
+                     labels=c("Post2", "Transplant", "Transplant"),
+                     values=c("circle","square","square")) +
+  geom_point(size=2) +
+  geom_segment(aes(x=x_cen, y=y_cen, xend=NMDS1, yend=NMDS2), alpha=0.2) +
+  labs(y = "NMDS2", x="NMDS1 \n Richness beta diversity") +
+  theme_classic() +
+  theme(legend.position="none")
+
+p1<-beta_neutral_nmds_transplant9 %>%
+  group_by(type) %>%
+  mutate(x_cen = mean(NMDS1, na.rm = TRUE)) %>%
+  mutate(y_cen = mean(NMDS2, na.rm = TRUE)) %>%
+  ungroup() %>%
+  ggplot(., aes(x=NMDS1,y=NMDS2, color=type, shape=time_point)) +
+  scale_color_manual(name="Type",
+                     breaks=c("Control", "Hot_control", "Treatment"),
+                     labels=c("Cold-Cold", "Hot-Hot", "Cold-Hot"),
+                     values=c("#4477AA","#d57d2c","#76b183")) +
+  scale_shape_manual(name="time_point",
+                     breaks=c("6_Post-FMT2", "3_Transplant1", "4_Transplant2"),
+                     labels=c("Post2", "Transplant", "Transplant"),
+                     values=c("circle","square","square")) +
+  geom_point(size=2) +
+  geom_segment(aes(x=x_cen, y=y_cen, xend=NMDS1, yend=NMDS2), alpha=0.2) +
+  labs(y= element_blank (), x="NMDS1 \n Neutral beta diversity") +
+  theme_classic() +
+  theme(legend.position="none")
+
+p2<-beta_phylo_nmds_transplant9 %>%
+  group_by(type) %>%
+  mutate(x_cen = mean(NMDS1, na.rm = TRUE)) %>%
+  mutate(y_cen = mean(NMDS2, na.rm = TRUE)) %>%
+  ungroup() %>%
+  ggplot(., aes(x=NMDS1,y=NMDS2, color=type, shape=time_point)) +
+  scale_color_manual(name="Type",
+                     breaks=c("Control", "Hot_control", "Treatment"),
+                     labels=c("Cold-Cold", "Hot-Hot", "Cold-Hot"),
+                     values=c("#4477AA","#d57d2c","#76b183")) +
+  scale_shape_manual(name="time_point",
+                     breaks=c("6_Post-FMT2", "3_Transplant1", "4_Transplant2"),
+                     labels=c("Post2", "Transplant", "Transplant"),
+                     values=c("circle","square","square")) +
+  geom_point(size=2) +
+  geom_segment(aes(x=x_cen, y=y_cen, xend=NMDS1, yend=NMDS2), alpha=0.2) +
+  labs(y= element_blank (), x="NMDS1 \n Phylogenetic beta diversity") +
+  theme_classic() +
+  theme(legend.position="none")
+```
+
+```{r beta_neutral_nmds_plot_transplant9_final, echo=FALSE, results=TRUE, fig.height=8, fig.width=10, fig.fullwidth=TRUE}
+ggarrange(p0, p1, p2, ncol=3, nrow=1, common.legend = TRUE, legend="right")
+```
+
 #### Comparison between the different experimental time points (Acclimation vs Transplant samples)
 
 ```{r diss_data1_3, echo=FALSE, results=FALSE}
@@ -1503,15 +1853,15 @@ p0<-beta_richness_nmds_all_comparison %>%
   mutate(y_cen = mean(NMDS2, na.rm = TRUE)) %>%
   ungroup() %>%
   #filter(!is.na(type)) %>%
-  filter(type!="Hot_control") %>%
+  #filter(type!="Hot_control") %>%
   ggplot(., aes(x=NMDS1,y=NMDS2, color=time_point, shape=type)) +
   scale_color_manual(name="time_point",
                      breaks=c("1_Acclimation", "3_Transplant1", "4_Transplant2", "2_Antibiotics", "5_Post-FMT1", "6_Post-FMT2"),
                      labels=c("Acclimation", "Transplant", "Transplant", "Antibiotics", "Post1", "Post2"),
                      values=c("#8c97cc","#e1d096","#e1d096", "#96e199","#d096e1", "#f2ae8b")) +
    scale_shape_manual(name="type",
-              breaks=c("Control", "Treatment"),
-              values=c(16, 17))+
+              breaks=c("Control","Treatment", "Hot_control"),
+              values=c(16,17, 18))+
   #facet_wrap(. ~ type) +
   geom_point(size=2) +
   geom_segment(aes(x=x_cen, y=y_cen, xend=NMDS1, yend=NMDS2), alpha=0.4) +
@@ -1525,15 +1875,15 @@ p1<-beta_neutral_nmds_all_comparison %>%
   mutate(y_cen = mean(NMDS2, na.rm = TRUE)) %>%
   ungroup() %>%
   #filter(!is.na(type)) %>%
-  filter(type!="Hot_control") %>%
+  #filter(type!="Control") %>%
   ggplot(., aes(x=NMDS1,y=NMDS2, color=time_point, shape=type)) +
   scale_color_manual(name="time_point",
                      breaks=c("1_Acclimation", "3_Transplant1", "4_Transplant2", "2_Antibiotics", "5_Post-FMT1", "6_Post-FMT2"),
                      labels=c("Acclimation", "Transplant", "Transplant", "Antibiotics", "Post1", "Post2"),
                      values=c("#8c97cc","#e1d096","#e1d096", "#96e199","#d096e1", "#f2ae8b")) +
    scale_shape_manual(name="type",
-              breaks=c("Control", "Treatment"),
-              values=c(16, 17))+
+              breaks=c("Control","Treatment", "Hot_control"),
+              values=c(16,17, 18))+
   #facet_wrap(. ~ type) +
   geom_point(size=2) +
   geom_segment(aes(x=x_cen, y=y_cen, xend=NMDS1, yend=NMDS2), alpha=0.4) +
@@ -1547,15 +1897,15 @@ p2<-beta_phylo_nmds_all_comparison %>%
   mutate(y_cen = mean(NMDS2, na.rm = TRUE)) %>%
   ungroup() %>%
   #filter(!is.na(type)) %>%
-  filter(type!="Hot_control") %>%
+  #filter(type!="Hot_control") %>%
   ggplot(., aes(x=NMDS1,y=NMDS2, color=time_point, shape=type)) +
   scale_color_manual(name="time_point",
                      breaks=c("1_Acclimation", "3_Transplant1", "4_Transplant2", "2_Antibiotics", "5_Post-FMT1", "6_Post-FMT2"),
                      labels=c("Acclimation", "Transplant", "Transplant", "Antibiotics", "Post1", "Post2"),
                      values=c("#8c97cc","#e1d096","#e1d096", "#96e199","#d096e1", "#f2ae8b")) +
   scale_shape_manual(name="type",
-              breaks=c("Control", "Treatment"),
-              values=c(16, 17))+
+              breaks=c("Control","Treatment", "Hot_control"),
+              values=c(16,17, 18))+
   #facet_wrap(. ~ type) +
   geom_point(size=2) +
   geom_segment(aes(x=x_cen, y=y_cen, xend=NMDS1, yend=NMDS2), alpha=0.4) +
