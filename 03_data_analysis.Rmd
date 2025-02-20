@@ -1,0 +1,1381 @@
+# Diversity analysis
+```{r knitr_options, include=FALSE}
+knitr::opts_chunk$set(fig.width=10, fig.height=7, fig.fullwidth=TRUE,
+fig.path='Figures/', warning=FALSE,
+message=FALSE)
+set.seed(1802)
+```
+
+```{r load_data_community}
+load("data/data.Rdata")
+load("data/gifts.Rdata")
+load("data/beta_19022025.Rdata")
+```
+
+```{r data, comment="", message=FALSE, warning=FALSE}
+genome_counts_filt <- genome_counts_filt %>% 
+  column_to_rownames(var = "genome") %>%
+  filter(rowSums(. != 0, na.rm = TRUE) > 0)%>% 
+  select(where(~ sum(.) > 0)) %>% 
+  select(-AC85) %>% 
+  rownames_to_column(., "genome")
+
+genome_tree <- keep.tip(genome_tree, tip=genome_counts_filt$genome)
+
+table <- genome_counts_filt %>%
+  t() %>%
+  row_to_names(row_number = 1) %>% 
+  as.data.frame() %>% 
+  mutate_if(is.character,as.numeric) %>% 
+  rownames_to_column(., "sample")
+  
+master_table <- sample_metadata %>%
+  mutate(sample=Tube_code) %>%
+  mutate(Tube_code=str_remove_all(Tube_code, "_a")) %>% 
+  filter(Tube_code %in% table$sample) %>%
+  mutate(treatment = sub("^\\d+_", "", time_point))%>% 
+  left_join(., table, by=join_by("Tube_code" =="sample"))
+
+sample_metadata <- master_table %>% 
+  select(1:13)
+
+genome_counts_filt <- master_table %>% 
+  select(12,14:323) %>% 
+  t() %>%
+  row_to_names(row_number = 1) %>% 
+  as.data.frame() %>% 
+  mutate_if(is.character,as.numeric) %>% 
+  filter(rowSums(. != 0, na.rm = TRUE) > 0)%>%
+  dplyr::select(where(~ !all(. == 0)))%>% 
+  rownames_to_column(., "genome")
+
+genome_counts_filtering <- master_table %>% 
+  select(12,14:323) %>% 
+  t() %>%
+  row_to_names(row_number = 1) %>% 
+  as.data.frame() %>% 
+  mutate_if(is.character,as.numeric) %>% 
+  filter(rowSums(. != 0, na.rm = TRUE) > 0)%>%
+  dplyr::select(where(~ !all(. == 0)))
+
+genome_tree <- keep.tip(genome_tree, tip=genome_counts_filt$genome)
+match_data(genome_counts_filtering,genome_tree)
+
+genome_metadata <- genome_metadata %>% 
+  filter(genome %in% genome_counts_filt$genome)
+```
+
+## Calculate diversities
+
+### Alpha diversity
+
+```{r alpha_div, comment="", message=FALSE, warning=FALSE}
+# Calculate Hill numbers
+richness <- genome_counts_filt %>%
+  column_to_rownames(var = "genome") %>%
+  dplyr::select(where(~ !all(. == 0))) %>%
+  hilldiv(., q = 0) %>%
+  t() %>%
+  as.data.frame() %>%
+  dplyr::rename(richness = 1) %>%
+  rownames_to_column(var = "sample")
+
+neutral <- genome_counts_filt %>%
+  column_to_rownames(var = "genome") %>%
+  dplyr::select(where(~ !all(. == 0))) %>%
+  hilldiv(., q = 1) %>%
+  t() %>%
+  as.data.frame() %>%
+  dplyr::rename(neutral = 1) %>%
+  rownames_to_column(var = "sample")
+
+phylogenetic <- genome_counts_filt %>%
+  column_to_rownames(var = "genome") %>%
+  dplyr::select(where(~ !all(. == 0))) %>%
+  hilldiv(., q = 1, tree = genome_tree) %>%
+  t() %>%
+  as.data.frame() %>%
+  dplyr::rename(phylogenetic = 1) %>%
+  rownames_to_column(var = "sample")
+
+genome_gifts1 <- genome_gifts[genome_counts_filt$genome,]
+genome_gifts1 <- genome_gifts1[, colSums(genome_gifts1 != 0) > 0]
+
+genome_counts_filt1 <- genome_counts_filt[genome_counts_filt$genome %in% rownames(genome_gifts1),]
+genome_counts_filt1 <- genome_counts_filt1 %>% 
+  remove_rownames() %>% 
+  column_to_rownames(var = "genome") %>% 
+      filter(rowSums(. != 0, na.rm = TRUE) > 0) %>% 
+  rownames_to_column(., "genome")
+
+dist <- genome_gifts1 %>%
+  to.elements(., GIFT_db) %>%
+  traits2dist(., method = "gower")
+
+functional <- genome_counts_filt1 %>%
+  filter(genome %in% rownames(dist)) %>% 
+  column_to_rownames(var = "genome") %>%
+  dplyr::select(where(~ !all(. == 0))) %>%
+  hilldiv(., q = 1, dist = dist) %>%
+  t() %>%
+  as.data.frame() %>%
+  dplyr::rename(functional = 1) %>%
+  rownames_to_column(var = "sample") %>%
+  mutate(functional = if_else(is.nan(functional), 1, functional))
+
+# Merge all metrics
+alpha_div <- richness %>%
+  full_join(neutral, by = join_by(sample == sample)) %>%
+  full_join(phylogenetic, by = join_by(sample == sample))%>%
+  full_join(functional, by = join_by(sample == sample))
+```
+```{r}
+treatment_colors <- c('#008080', "#d57d2c")
+```
+
+### Beta diversity
+
+```{r beta_div, comment="", message=FALSE, warning=FALSE, eval=FALSE}
+beta_q0n <- genome_counts_filt %>%
+  column_to_rownames(., "genome") %>%
+  filter(rowSums(. != 0, na.rm = TRUE) > 0) %>%
+  select_if(~!all(. == 0)) %>%
+  hillpair(., q = 0)
+
+beta_q1n <- genome_counts_filt %>%
+  column_to_rownames(., "genome") %>%
+  filter(rowSums(. != 0, na.rm = TRUE) > 0) %>%
+  select_if(~!all(. == 0)) %>%
+  hillpair(., q = 1)
+
+beta_q1p <- genome_counts_filt %>%
+  column_to_rownames(., "genome") %>%
+  filter(rowSums(. != 0, na.rm = TRUE) > 0) %>%
+  select_if(~!all(. == 0)) %>%
+  hillpair(., q = 1, tree = genome_tree)
+
+genome_gifts1 <- genome_gifts[genome_counts_filt$genome,]
+genome_gifts1 <- genome_gifts1[, colSums(genome_gifts1 != 0) > 0]
+genome_counts_filt1 <- genome_counts_filt[genome_counts_filt$genome %in% rownames(genome_gifts1),]
+
+dist <- genome_gifts1 %>%
+  to.elements(., GIFT_db) %>%
+  traits2dist(., method = "gower")
+
+beta_q1f <- genome_counts_filt1 %>%
+  column_to_rownames(., "genome") %>%
+  filter(rowSums(. != 0, na.rm = TRUE) > 0) %>%
+  select_if(~!all(. == 0)) %>%
+  hillpair(., q = 1, dist = dist)
+```
+
+```{r save_beta, comment="", message=FALSE,warning=FALSE, eval=FALSE}
+save(beta_q0n, 
+     beta_q1n, 
+     beta_q1p, 
+     beta_q1f, 
+     file = "data/beta_19022025.Rdata")
+```
+
+## Does the antibiotic administration change the microbial community?
+```{r filter_data, comment="", message=FALSE, warning=FALSE}
+alpha_div_meta <- alpha_div %>%
+  left_join(sample_metadata, by = join_by(sample == sample))%>%
+  filter(Population == "Cold_wet" & time_point %in% c("1_Acclimation", "2_Antibiotics") ) 
+```
+
+### Alpha diversity
+```{r alpha_div_plot_1, comment="", message=FALSE, warning=FALSE}
+alpha_div %>%
+  pivot_longer(-sample, names_to = "metric", values_to = "value") %>%
+  left_join(., sample_metadata, by = "sample") %>%
+  mutate(metric=factor(metric,levels=c("richness","neutral","phylogenetic", "functional"))) %>%
+  filter(Population == "Cold_wet" & time_point %in% c("1_Acclimation", "2_Antibiotics") ) %>% 
+  ggplot(aes(y = value, x = time_point, color=time_point, fill=time_point)) +
+  geom_jitter(width = 0.2, show.legend = FALSE) +
+  geom_boxplot(width = 0.5, alpha=0.5, outlier.shape = NA, show.legend = FALSE) +
+  scale_color_manual(values=treatment_colors)+
+  scale_fill_manual(values=treatment_colors) +
+  facet_wrap(. ~ metric, scales = "free") +
+  stat_compare_means(method = "wilcox.test", show.legend = F, size = 3, label.x = c(1.5))+
+  theme_classic() +
+  theme(
+    strip.background = element_blank(),
+    panel.grid.minor.x = element_line(size = .1, color = "grey"),
+    axis.title.x = element_blank(),
+    axis.title.y = element_text(size=10),
+    axis.text.x = element_text(angle = 45, hjust = 1),
+    # Increase plot size
+    plot.title = element_text(size = 10),
+    axis.text = element_text(size = 8),
+    axis.title = element_text(size = 8)
+      ) +
+  ylab("Alpha diversity")
+```
+
+***Richness***
+```{r LMM, comment="", message=FALSE, warning=FALSE}
+Modelq0GLMMNB <- glmer.nb(neutral ~ time_point+(1|individual), data = alpha_div_meta)
+summary(Modelq0GLMMNB)
+```
+
+***Neutral***
+```{r LMM_neutral, comment="", message=FALSE, warning=FALSE}
+Model_neutral <- lme(fixed = neutral ~ time_point, data = alpha_div_meta,
+               random = ~ 1 | individual)
+summary(Model_neutral)
+```
+
+***Phylogenetic***
+```{r LMM_phylo, comment="", message=FALSE, warning=FALSE}
+Model_phylo <- lme(fixed = phylogenetic ~ time_point, data = alpha_div_meta,
+               random = ~ 1 | individual)
+summary(Model_phylo)
+```
+
+***Functional***
+```{r LMM_func, comment="", message=FALSE, warning=FALSE}
+Model_funct <- lme(fixed = functional ~ time_point, data = alpha_div_meta,
+               random = ~ 1 | individual)
+summary(Model_funct)
+```
+
+### Beta diversity
+```{r filter_data1, comment="", message=FALSE, warning=FALSE}
+samples_to_keep <- sample_metadata %>%
+  filter(Population == "Cold_wet" & time_point %in% c("1_Acclimation", "2_Antibiotics")) %>% 
+  select(Tube_code) %>% 
+  pull()
+subset_meta <- sample_metadata %>%
+  filter(Population == "Cold_wet" & time_point %in% c("1_Acclimation", "2_Antibiotics"))
+```
+
+***Richness***
+```{r permanova_richness, comment="", message=FALSE, warning=FALSE}
+richness <- as.matrix(beta_q0n$S)
+richness <- as.dist(richness[rownames(richness) %in% samples_to_keep,
+               colnames(richness) %in% samples_to_keep])
+
+betadisper(richness, subset_meta$time_point) %>% permutest(.) 
+adonis2(richness ~ time_point,
+        data = subset_meta %>% arrange(match(Tube_code,labels(richness))),
+        permutations = 999,
+        strata = subset_meta %>% arrange(match(Tube_code,labels(richness))) %>% pull(individual)) %>%
+        broom::tidy() %>%
+        tt()
+```
+
+***Neutral***
+```{r permanova_neutral, comment="", message=FALSE, warning=FALSE}
+neutral <- as.matrix(beta_q1n$S)
+neutral <- as.dist(neutral[rownames(neutral) %in% samples_to_keep,
+               colnames(neutral) %in% samples_to_keep])
+
+betadisper(neutral, subset_meta$time_point) %>% permutest(.) 
+adonis2(neutral ~ time_point,
+        data = subset_meta %>% arrange(match(Tube_code,labels(neutral))),
+        permutations = 999,
+        strata = subset_meta %>% arrange(match(Tube_code,labels(neutral))) %>% pull(individual)) %>%
+        broom::tidy() %>%
+        tt()
+```
+
+***Phylogenetic***
+```{r permanova_phylo, comment="", message=FALSE, warning=FALSE}
+phylo <- as.matrix(beta_q1p$S)
+phylo <- as.dist(phylo[rownames(phylo) %in% samples_to_keep,
+               colnames(phylo) %in% samples_to_keep])
+betadisper(phylo, subset_meta$time_point) %>% permutest(.) 
+adonis2(phylo ~ time_point,
+        data = subset_meta %>% arrange(match(Tube_code,labels(phylo))),
+        permutations = 999,
+        strata = subset_meta %>% arrange(match(Tube_code,labels(phylo))) %>% pull(individual)) %>%
+        broom::tidy() %>%
+        tt()
+```
+
+***Functional***
+```{r permanova_func, comment="", message=FALSE, warning=FALSE}
+func <- as.matrix(beta_q1f$S)
+func <- as.dist(func[rownames(func) %in% samples_to_keep,
+               colnames(func) %in% samples_to_keep])
+betadisper(func, subset_meta$time_point) %>% permutest(.) 
+adonis2(func ~ time_point,
+        data = subset_meta %>% arrange(match(Tube_code,labels(func))),
+        permutations = 999,
+        strata = subset_meta %>% arrange(match(Tube_code,labels(func))) %>% pull(individual)) %>%
+        broom::tidy() %>%
+        tt()
+```
+
+### Structural zeros
+
+```{r struct_zero, comment="", message=FALSE, warning=FALSE}
+acclimation_samples <- sample_metadata %>%
+  filter(Population == "Cold_wet" & time_point == "1_Acclimation") %>% 
+  dplyr::select(sample) %>%
+  pull()
+
+antibiotics_samples <- sample_metadata %>%
+  filter(Population == "Cold_wet" & time_point == "2_Antibiotics") %>% 
+  dplyr::select(sample) %>% pull()
+
+structural_zeros <- genome_counts_filt %>% 
+  select(one_of(c("genome",subset_meta$sample))) %>%
+  filter(rowSums(across(where(is.numeric), ~ . != 0)) > 0) %>%
+  select(genome, where(~ is.numeric(.) && sum(.) > 0)) %>% 
+   rowwise() %>% #compute for each row (genome)
+   mutate(all_zeros_acclimation = all(c_across(all_of(acclimation_samples)) == 0)) %>% 
+   mutate(all_zeros_antibiotics = all(c_across(all_of(antibiotics_samples)) == 0)) %>% 
+   mutate(average_acclimation = mean(c_across(all_of(acclimation_samples)), na.rm = TRUE)) %>% 
+   mutate(average_antibiotics = mean(c_across(all_of(antibiotics_samples)), na.rm = TRUE)) %>% 
+   filter(all_zeros_acclimation == TRUE || all_zeros_antibiotics==TRUE)  %>% 
+   mutate(present = case_when(
+      all_zeros_acclimation & !all_zeros_antibiotics ~ "antibiotics",
+      !all_zeros_acclimation & all_zeros_antibiotics ~ "acclimation",
+      !all_zeros_acclimation & !all_zeros_antibiotics ~ "None",
+      TRUE ~ NA_character_
+    )) %>%
+   mutate(average = ifelse(present == "acclimation", average_acclimation, average_antibiotics)) %>%
+   dplyr::select(genome, present, average) %>%
+   left_join(genome_metadata, by=join_by(genome==genome)) %>%
+   arrange(present,-average)
+structural_zeros 
+  
+```
+
+```{r phylo_ob, comment="", message=FALSE, warning=FALSE}
+phylo_samples <- sample_metadata %>%
+  filter(Population == "Cold_wet" & time_point %in% c("1_Acclimation", "2_Antibiotics") )%>% 
+  column_to_rownames("sample") %>% 
+  sample_data()
+phylo_genome <- genome_counts_filt %>% 
+  filter(!genome %in% structural_zeros$genome) %>% 
+  select(one_of(c("genome",rownames(phylo_samples)))) %>%
+  filter(rowSums(across(where(is.numeric), ~ . != 0)) > 0) %>%
+  select(genome, where(~ is.numeric(.) && sum(.) > 0)) %>%
+  column_to_rownames("genome") %>% 
+  otu_table(., taxa_are_rows = TRUE)
+phylo_taxonomy <- genome_metadata %>% 
+  filter(genome %in% rownames(phylo_genome)) %>% 
+  column_to_rownames("genome") %>% 
+  dplyr::select(domain,phylum,class,order,family,genus,species) %>% 
+  as.matrix() %>% 
+  tax_table()
+
+physeq_genome_filtered <- phyloseq(phylo_genome, phylo_taxonomy, phylo_samples)
+```
+```{r ancom_rand_accl_ant, comment="", message=FALSE, warning=FALSE, eval=FALSE}
+set.seed(1234) #set seed for reproducibility
+ancom_rand_output = ancombc2(data = physeq_genome_filtered, 
+                  assay_name = "counts", 
+                  tax_level = NULL,
+                  fix_formula = "time_point",
+                  rand_formula = "(1|individual)",
+                  p_adj_method = "holm", 
+                  pseudo_sens = TRUE,
+                  prv_cut =0, 
+                  lib_cut = 0, 
+                  s0_perc = 0.05,
+                  group = NULL, 
+                  struc_zero = FALSE, 
+                  neg_lb = FALSE,
+                  alpha = 0.05, 
+                  n_cl = 2, 
+                  verbose = TRUE,
+                  global = FALSE, 
+                  pairwise = FALSE, 
+                  dunnet = FALSE, 
+                  trend = FALSE,
+                  iter_control = list(tol = 1e-5, max_iter = 20, verbose = FALSE),
+                  em_control = list(tol = 1e-5, max_iter = 100),
+                  lme_control = lme4::lmerControl(),
+                  mdfdr_control = list(fwer_ctrl_method = "holm", B = 100), 
+                  trend_control = NULL)
+
+```
+
+```{r save_ancombc1, warning=FALSE, comments="", message=FALSE, eval=FALSE}
+save(ancom_rand_output, 
+     file = "data/ancombc_antib_accl.Rdata")
+```
+
+```{r load_ancombc, warning=FALSE, comments="", message=FALSE}
+load("data/ancombc_antib_accl.Rdata")
+```
+
+```{r ancom_rand1, comment="", message=FALSE, warning=FALSE}
+taxonomy <- data.frame(physeq_genome_filtered@tax_table) %>%
+  rownames_to_column(., "taxon") %>%
+  mutate_at(vars(order, phylum, family, genus, species), ~ str_replace(., "[dpcofgs]__", ""))
+
+ancombc_rand_table_mag <- ancom_rand_output$res %>%
+  dplyr::select(taxon, lfc_time_point2_Antibiotics, p_time_point2_Antibiotics) %>%
+  filter(p_time_point2_Antibiotics < 0.05) %>%
+  dplyr::arrange(p_time_point2_Antibiotics) %>%
+  merge(., taxonomy, by="taxon") %>%
+  mutate_at(vars(phylum, species), ~ str_replace(., "[dpcofgs]__", ""))%>%
+  dplyr::arrange(lfc_time_point2_Antibiotics)
+
+colors_alphabetic <- read_tsv("https://raw.githubusercontent.com/earthhologenome/EHI_taxonomy_colour/main/ehi_phylum_colors.tsv") %>%
+  mutate_at(vars(phylum), ~ str_replace(., "[dpcofgs]__", ""))  %>%
+  right_join(taxonomy, by=join_by(phylum == phylum)) %>%
+  dplyr::select(phylum, colors) %>%
+  mutate(colors = str_c(colors, "80"))  %>% #add 80% alpha
+	unique() %>%
+	dplyr::arrange(phylum)
+
+tax_table <- as.data.frame(unique(ancombc_rand_table_mag$phylum))
+  
+colnames(tax_table)[1] <- "phylum"
+tax_color <- merge(tax_table, colors_alphabetic, by="phylum")%>%
+	dplyr::arrange(phylum) %>%
+	dplyr::select(colors) %>%
+	pull()
+```
+```{r ancombc_rand_plot_phy1, comment="", message=FALSE, warning=FALSE, fig.height=10, fig.width=8, fig.fullwidth=TRUE}
+ancombc_rand_table_mag%>%
+      mutate(genome=factor(taxon,levels=ancombc_rand_table_mag$taxon)) %>%
+ggplot(., aes(x=lfc_time_point2_Antibiotics, y=forcats::fct_reorder(genome,lfc_time_point2_Antibiotics), fill=phylum)) + #forcats::fct_rev()
+  geom_col() + 
+  scale_fill_manual(values=tax_color) + 
+  geom_hline(yintercept=0) + 
+#  coord_flip()+
+  theme(panel.background = element_blank(),
+        axis.line = element_line(size = 0.5, linetype = "solid", colour = "black"),
+        axis.text.x = element_text(size = 12),
+        axis.text.y = element_text(size = 8),
+        axis.title = element_text(size = 14, face = "bold"),
+        legend.text = element_text(size = 12),
+        legend.title = element_text(size = 14, face = "bold"),
+        legend.position = "right", legend.box = "vertical")+
+  xlab("log2FoldChange") + 
+  ylab("Species")+
+  guides(fill=guide_legend(title="Phylum"))
+```
+
+
+
+## Does antibiotic administration remove the differences found in the two populations?
+
+### Alpha diversity
+```{r filter_data01, comment="", message=FALSE, warning=FALSE}
+alpha_div_meta <- alpha_div %>%
+  left_join(sample_metadata, by = join_by(sample == sample))%>%
+  filter(time_point == "2_Antibiotics" )
+```
+
+```{r alpha_div_plot_2, comment="", message=FALSE, warning=FALSE}
+alpha_div %>%
+  pivot_longer(-sample, names_to = "metric", values_to = "value") %>%
+  left_join(., sample_metadata, by = "sample") %>%
+  mutate(metric=factor(metric,levels=c("richness","neutral","phylogenetic", "functional"))) %>%
+  filter(time_point == "2_Antibiotics" ) %>% 
+  ggplot(aes(y = value, x = Population, color=Population, fill=Population)) +
+  geom_jitter(width = 0.2, show.legend = FALSE) +
+  geom_boxplot(width = 0.5, alpha=0.5, outlier.shape = NA, show.legend = FALSE) +
+  scale_color_manual(values=treatment_colors)+
+  scale_fill_manual(values=treatment_colors) +
+      facet_wrap(. ~ metric, scales = "free") +
+  stat_compare_means(method = "wilcox.test", show.legend = F, size = 3, label.x = c(1.5))+
+      theme_classic() +
+        theme(
+    strip.background = element_blank(),
+    panel.grid.minor.x = element_line(size = .1, color = "grey"),
+    axis.title.x = element_blank(),
+    axis.title.y = element_text(size=10),
+    axis.text.x = element_text(angle = 45, hjust = 1),
+    # Increase plot size
+    plot.title = element_text(size = 10),
+    axis.text = element_text(size = 8),
+    axis.title = element_text(size = 8)
+      ) +
+  ylab("Alpha diversity")
+```
+
+### Beta diversity
+```{r data_filter1, comment="", message=FALSE, warning=FALSE}
+samples_to_keep <- sample_metadata %>%
+  filter(time_point == "2_Antibiotics") %>% 
+  select(Tube_code) %>% 
+  pull()
+subset_meta <- sample_metadata %>%
+  filter(time_point == "2_Antibiotics")
+```
+
+***Richness***
+```{r permanova_rich1, comment="", message=FALSE, warning=FALSE}
+richness <- as.matrix(beta_q0n$S)
+richness <- as.dist(richness[rownames(richness) %in% samples_to_keep,
+               colnames(richness) %in% samples_to_keep])
+
+betadisper(richness, subset_meta$Population) %>% permutest(.) 
+adonis2(richness ~ Population,
+        data = subset_meta %>% arrange(match(Tube_code,labels(richness))),
+        permutations = 999) %>%
+        broom::tidy() %>%
+        tt()
+```
+
+***Neutral***
+```{r permanova_neutral1, comment="", message=FALSE, warning=FALSE}
+neutral <- as.matrix(beta_q1n$S)
+neutral <- as.dist(neutral[rownames(neutral) %in% samples_to_keep,
+               colnames(neutral) %in% samples_to_keep])
+
+betadisper(neutral, subset_meta$Population) %>% permutest(.) 
+adonis2(neutral ~ Population,
+        data = subset_meta %>% arrange(match(Tube_code,labels(neutral))),
+        permutations = 999) %>%
+        broom::tidy() %>%
+        tt()
+```
+
+***Phylogenetic***
+```{r permanova_phylo1, comment="", message=FALSE, warning=FALSE}
+phylo <- as.matrix(beta_q1p$S)
+phylo <- as.dist(phylo[rownames(phylo) %in% samples_to_keep,
+               colnames(phylo) %in% samples_to_keep])
+betadisper(phylo, subset_meta$Population) %>% permutest(.) 
+adonis2(phylo ~ Population,
+        data = subset_meta %>% arrange(match(Tube_code,labels(phylo))),
+        permutations = 999) %>%
+        broom::tidy() %>%
+        tt()
+```
+
+***Functional***
+```{r permanova_func1, comment="", message=FALSE, warning=FALSE}
+func <- as.matrix(beta_q1f$S)
+func <- as.dist(func[rownames(func) %in% samples_to_keep,
+               colnames(func) %in% samples_to_keep])
+betadisper(func, subset_meta$Population) %>% permutest(.) 
+adonis2(func ~ Population,
+        data = subset_meta %>% arrange(match(Tube_code,labels(func))),
+        permutations = 999) %>%
+        broom::tidy() %>%
+        tt()
+```
+
+## Are the microbial communities similar in both donor samples?
+```{r filter_Data2, comment="", message=FALSE, warning=FALSE}
+samples_to_keep <- sample_metadata %>%
+  filter(type =="Hot_control" & time_point %in% c( "3_Transplant1", "4_Transplant2"))%>% 
+  select(sample) %>% 
+  pull()
+subset_meta <- sample_metadata %>%
+  filter(type =="Hot_control" & time_point %in% c( "3_Transplant1", "4_Transplant2"))
+```
+
+```{r alpha_div_plot_02, comment="", message=FALSE, warning=FALSE}
+alpha_div %>%
+  pivot_longer(-sample, names_to = "metric", values_to = "value") %>%
+  left_join(., sample_metadata, by = "sample") %>%
+  mutate(metric=factor(metric,levels=c("richness","neutral","phylogenetic", "functional"))) %>%
+  filter(type =="Hot_control" & time_point %in% c( "3_Transplant1", "4_Transplant2")) %>% 
+  ggplot(aes(y = value, x = time_point, color=time_point, fill=time_point)) +
+  geom_jitter(width = 0.2, show.legend = FALSE) +
+  geom_boxplot(width = 0.5, alpha=0.5, outlier.shape = NA, show.legend = FALSE) +
+  scale_color_manual(values=treatment_colors)+
+  scale_fill_manual(values=treatment_colors) +
+  facet_wrap(. ~ metric, scales = "free") +
+  stat_compare_means(method = "wilcox.test", show.legend = F, size = 3, label.x = c(1.5))+
+  theme_classic() +
+  theme(
+    strip.background = element_blank(),
+    panel.grid.minor.x = element_line(size = .1, color = "grey"),
+    axis.title.x = element_blank(),
+    axis.title.y = element_text(size=10),
+    axis.text.x = element_text(angle = 45, hjust = 1),
+    # Increase plot size
+    plot.title = element_text(size = 10),
+    axis.text = element_text(size = 8),
+    axis.title = element_text(size = 8)
+      ) +
+  ylab("Alpha diversity")
+```
+
+***Richness***
+```{r permanova_richness2, comment="", message=FALSE, warning=FALSE}
+richness <- as.matrix(beta_q0n$S)
+richness <- as.dist(richness[rownames(richness) %in% samples_to_keep,
+               colnames(richness) %in% samples_to_keep])
+
+betadisper(richness, subset_meta$time_point) %>% permutest(.) 
+adonis2(richness ~ time_point,
+        data = subset_meta %>% arrange(match(sample,labels(richness))),
+        permutations = 999) %>%
+        broom::tidy() %>%
+        tt()
+```
+
+***Neutral***
+```{r permanova_neutral2, comment="", message=FALSE, warning=FALSE}
+neutral <- as.matrix(beta_q1n$S)
+neutral <- as.dist(neutral[rownames(neutral) %in% samples_to_keep,
+               colnames(neutral) %in% samples_to_keep])
+
+betadisper(neutral, subset_meta$time_point) %>% permutest(.) 
+adonis2(neutral ~ time_point,
+        data = subset_meta %>% arrange(match(Tube_code,labels(neutral))),
+        permutations = 999) %>%
+        broom::tidy() %>%
+        tt()
+```
+
+***Phylogenetic***
+```{r permanova_phylo2, comment="", message=FALSE, warning=FALSE}
+phylo <- as.matrix(beta_q1p$S)
+phylo <- as.dist(phylo[rownames(phylo) %in% samples_to_keep,
+               colnames(phylo) %in% samples_to_keep])
+betadisper(phylo, subset_meta$time_point) %>% permutest(.) 
+adonis2(phylo ~ time_point,
+        data = subset_meta %>% arrange(match(Tube_code,labels(phylo))),
+        permutations = 999) %>%
+        broom::tidy() %>%
+        tt()
+```
+
+***Functional***
+```{r permanova_func2, comment="", message=FALSE, warning=FALSE}
+func <- as.matrix(beta_q1f$S)
+func <- as.dist(func[rownames(func) %in% samples_to_keep,
+               colnames(func) %in% samples_to_keep])
+betadisper(func, subset_meta$time_point) %>% permutest(.) 
+adonis2(func ~ time_point,
+        data = subset_meta %>% arrange(match(Tube_code,labels(func))),
+        permutations = 999) %>%
+        broom::tidy() %>%
+        tt()
+```
+
+## Does the donor sample maintain the microbial community found in acclimation?
+```{r filter_data3, comment="", message=FALSE, warning=FALSE}
+sample_metadata <- sample_metadata %>%
+    mutate(treatment=case_when(
+    treatment %in% c("Transplant1", "Transplant2") ~ "Transplant",
+    TRUE ~ treatment
+  ))
+samples_to_keep <- sample_metadata %>%
+  filter(type == "Hot_control" & treatment %in% c("Acclimation","Transplant")) %>% 
+  select(sample) %>% 
+  pull()
+subset_meta <- sample_metadata %>%
+  filter(type == "Hot_control" & treatment %in% c("Acclimation","Transplant"))
+```
+
+***Richness***
+```{r permanova_richness3, comment="", message=FALSE, warning=FALSE}
+richness <- as.matrix(beta_q0n$S)
+richness <- as.dist(richness[rownames(richness) %in% samples_to_keep,
+               colnames(richness) %in% samples_to_keep])
+
+betadisper(richness, subset_meta$treatment) %>% permutest(.) 
+adonis2(richness ~ treatment,
+        data = subset_meta %>% arrange(match(sample,labels(richness))),
+        permutations = 999) %>%
+        broom::tidy() %>%
+        tt()
+```
+
+***Neutral***
+```{r permanova_neutral3, comment="", message=FALSE, warning=FALSE}
+neutral <- as.matrix(beta_q1n$S)
+neutral <- as.dist(neutral[rownames(neutral) %in% samples_to_keep,
+               colnames(neutral) %in% samples_to_keep])
+
+betadisper(neutral, subset_meta$treatment) %>% permutest(.) 
+adonis2(neutral ~ treatment,
+        data = subset_meta %>% arrange(match(sample,labels(neutral))),
+        permutations = 999) %>%
+        broom::tidy() %>%
+        tt()
+```
+
+
+```{r beta_div_nmds_neutral_plot, comment="", message=FALSE, warning=FALSE}
+neutral %>%
+  vegan::metaMDS(., trymax = 500, k = 2, trace=0) %>%
+  vegan::scores() %>%
+  as_tibble(., rownames = "sample") %>%
+  dplyr::left_join(subset_meta, by = join_by(sample == sample)) %>%
+  group_by(treatment) %>%
+  mutate(x_cen = mean(NMDS1, na.rm = TRUE)) %>%
+  mutate(y_cen = mean(NMDS2, na.rm = TRUE)) %>%
+  ungroup() %>%
+  ggplot(aes(x = NMDS1, y = NMDS2, color = treatment)) +
+  geom_point(size = 4) +
+  scale_color_manual(values = treatment_colors,labels=c("Cold_wet" = "Cold wet", "Hot_dry" = "Hot dry")) +
+  geom_segment(aes(x = x_cen, y = y_cen, xend = NMDS1, yend = NMDS2), alpha = 0.9, show.legend = FALSE) +
+  theme(
+    axis.title = element_text(size = 12, face = "bold"),
+    axis.text = element_text(size = 10),
+    panel.background = element_blank(),
+    axis.line = element_line(size = 0.5, linetype = "solid", colour = "black"),
+    legend.text = element_text(size = 10),
+    legend.title = element_text(size = 12),
+    legend.position = "right", legend.box = "vertical"
+    )
+```
+
+***Phylogenetic***
+```{r permanova_phylo3, comment="", message=FALSE, warning=FALSE}
+set.seed(1802)
+phylo <- as.matrix(beta_q1p$S)
+phylo <- as.dist(phylo[rownames(phylo) %in% samples_to_keep,
+               colnames(phylo) %in% samples_to_keep])
+betadisper(phylo, subset_meta$treatment) %>% permutest(.) 
+adonis2(phylo ~ treatment,
+        data = subset_meta %>% arrange(match(sample,labels(phylo))),
+        permutations = 999) %>%
+        broom::tidy() %>%
+        tt()
+```
+
+```{r beta_div_nmds_phylo_plot, comment="", message=FALSE, warning=FALSE}
+phylo %>%
+  vegan::metaMDS(., trymax = 500, k = 2, trace=0) %>%
+  vegan::scores() %>%
+  as_tibble(., rownames = "sample") %>%
+  dplyr::left_join(subset_meta, by = join_by(sample == sample)) %>%
+  group_by(treatment) %>%
+  mutate(x_cen = mean(NMDS1, na.rm = TRUE)) %>%
+  mutate(y_cen = mean(NMDS2, na.rm = TRUE)) %>%
+  ungroup() %>%
+  ggplot(aes(x = NMDS1, y = NMDS2, color = treatment)) +
+  geom_point(size = 4) +
+  scale_color_manual(values = treatment_colors,labels=c("Cold_wet" = "Cold wet", "Hot_dry" = "Hot dry")) +
+  geom_segment(aes(x = x_cen, y = y_cen, xend = NMDS1, yend = NMDS2), alpha = 0.9, show.legend = FALSE) +
+  theme(
+    axis.title = element_text(size = 12, face = "bold"),
+    axis.text = element_text(size = 10),
+    panel.background = element_blank(),
+    axis.line = element_line(size = 0.5, linetype = "solid", colour = "black"),
+    legend.text = element_text(size = 10),
+    legend.title = element_text(size = 12),
+    legend.position = "right", legend.box = "vertical"
+    )
+```
+
+***Functional***
+```{r permanova_func3, comment="", message=FALSE, warning=FALSE}
+func <- as.matrix(beta_q1f$S)
+func <- as.dist(func[rownames(func) %in% samples_to_keep,
+               colnames(func) %in% samples_to_keep])
+betadisper(func, subset_meta$treatment) %>% permutest(.) 
+adonis2(func ~ treatment,
+        data = subset_meta %>% arrange(match(sample,labels(func))),
+        permutations = 999) %>%
+        broom::tidy() %>%
+        tt()
+```
+```{r beta_div_nmds_func_plot, comment="", message=FALSE, warning=FALSE}
+func %>%
+  vegan::metaMDS(., trymax = 500, k = 2, trace=0) %>%
+  vegan::scores() %>%
+  as_tibble(., rownames = "sample") %>%
+  dplyr::left_join(subset_meta, by = join_by(sample == sample)) %>%
+  group_by(treatment) %>%
+  mutate(x_cen = mean(NMDS1, na.rm = TRUE)) %>%
+  mutate(y_cen = mean(NMDS2, na.rm = TRUE)) %>%
+  ungroup() %>%
+  ggplot(aes(x = NMDS1, y = NMDS2, color = treatment)) +
+  geom_point(size = 4) +
+  scale_color_manual(values = treatment_colors,labels=c("Cold_wet" = "Cold wet", "Hot_dry" = "Hot dry")) +
+  geom_segment(aes(x = x_cen, y = y_cen, xend = NMDS1, yend = NMDS2), alpha = 0.9, show.legend = FALSE) +
+  theme(
+    axis.title = element_text(size = 12, face = "bold"),
+    axis.text = element_text(size = 10),
+    panel.background = element_blank(),
+    axis.line = element_line(size = 0.5, linetype = "solid", colour = "black"),
+    legend.text = element_text(size = 10),
+    legend.title = element_text(size = 12),
+    legend.position = "right", legend.box = "vertical"
+    )
+```
+
+## Is the donor sample microbiota different to recipient microbiota?
+```{r filter_data4, comment="", message=FALSE, warning=FALSE}
+samples_to_keep <- sample_metadata %>%
+  filter(type == "Treatment" & treatment %in% c("Acclimation", "Transplant")) %>% 
+  select(sample) %>% 
+  pull()
+subset_meta <- sample_metadata %>%
+  filter(type == "Treatment" & treatment %in% c("Acclimation", "Transplant"))
+```
+
+***Richness***
+```{r permanova_richness4, comment="", message=FALSE, warning=FALSE}
+richness <- as.matrix(beta_q0n$S)
+richness <- as.dist(richness[rownames(richness) %in% samples_to_keep,
+               colnames(richness) %in% samples_to_keep])
+
+betadisper(richness, subset_meta$treatment) %>% permutest(.) 
+adonis2(richness ~ treatment,
+        data = subset_meta %>% arrange(match(sample,labels(richness))),
+        permutations = 999) %>%
+        broom::tidy() %>%
+        tt()
+```
+
+***Neutral***
+```{r permanova_neutral4, comment="", message=FALSE, warning=FALSE}
+neutral <- as.matrix(beta_q1n$S)
+neutral <- as.dist(neutral[rownames(neutral) %in% samples_to_keep,
+               colnames(neutral) %in% samples_to_keep])
+
+betadisper(neutral, subset_meta$treatment) %>% permutest(.) 
+adonis2(neutral ~ treatment,
+        data = subset_meta %>% arrange(match(sample,labels(neutral))),
+        permutations = 999) %>%
+        broom::tidy() %>%
+        tt()
+```
+
+***Phylogenetic***
+```{r permanova_phylo4, comment="", message=FALSE, warning=FALSE}
+phylo <- as.matrix(beta_q1p$S)
+phylo <- as.dist(phylo[rownames(phylo) %in% samples_to_keep,
+               colnames(phylo) %in% samples_to_keep])
+betadisper(phylo, subset_meta$treatment) %>% permutest(.) 
+adonis2(phylo ~ treatment,
+        data = subset_meta %>% arrange(match(sample,labels(phylo))),
+        permutations = 999) %>%
+        broom::tidy() %>%
+        tt()
+```
+
+***Functional***
+```{r permanova_func4, comment="", message=FALSE, warning=FALSE}
+func <- as.matrix(beta_q1f$S)
+func <- as.dist(func[rownames(func) %in% samples_to_keep,
+               colnames(func) %in% samples_to_keep])
+betadisper(func, subset_meta$treatment) %>% permutest(.) 
+adonis2(func ~ treatment,
+        data = subset_meta %>% arrange(match(Tube_code,labels(func))),
+        permutations = 999) %>%
+        broom::tidy() %>%
+        tt()
+```
+
+## Do FMT change the microbial community compared to antibiotics and acclimation? How constant is it over time?
+
+### Alpha diversity
+
+```{r filter_data5, comment="", message=FALSE, warning=FALSE}
+alpha_div_meta <- alpha_div %>%
+  left_join(sample_metadata, by = join_by(sample == sample))%>%
+  filter(type == "Treatment" & treatment %in% c("Post-FMT1","Post-FMT2", "Antibiotics", "Acclimation") ) 
+```
+
+```{r alpha_div_plot_5, comment="", message=FALSE, warning=FALSE}
+alpha_div %>%
+  pivot_longer(-sample, names_to = "metric", values_to = "value") %>%
+  left_join(., sample_metadata, by = "sample") %>%
+  mutate(metric=factor(metric,levels=c("richness","neutral","phylogenetic", "functional"))) %>%
+  filter(type=="Treatment" & treatment %in% c( "Antibiotics","Acclimation", "Post-FMT1", "Post-FMT2" )) %>% 
+  ggplot(aes(y = value, x = treatment, color=treatment, fill=treatment)) +
+  geom_jitter(width = 0.2, show.legend = FALSE) +
+  geom_boxplot(width = 0.5, alpha=0.5, outlier.shape = NA, show.legend = FALSE) +
+#  scale_color_manual(values=treatment_colors)+
+#  scale_fill_manual(values=treatment_colors) +
+  facet_wrap(. ~ metric, scales = "free") +
+      theme_classic() +
+        theme(
+    strip.background = element_blank(),
+    panel.grid.minor.x = element_line(size = .1, color = "grey"),
+    axis.title.x = element_blank(),
+    axis.title.y = element_text(size=10),
+    axis.text.x = element_text(angle = 45, hjust = 1),
+    plot.title = element_text(size = 10),
+    axis.text = element_text(size = 8),
+    axis.title = element_text(size = 8)
+      ) +
+  ylab("Alpha diversity")
+```
+
+***Richness***
+```{r LMM_rich5, comment="", message=FALSE, warning=FALSE}
+Model_rich <- glmer.nb(richness ~ treatment+(1|individual), data = alpha_div_meta)
+#summary(Model_rich)
+emmeans(Model_rich, pairwise ~ treatment)
+```
+
+***Neutral***
+```{r LMM_neutral5, comment="", message=FALSE, warning=FALSE}
+Model_neutral <- lme(fixed = neutral ~ treatment, data = alpha_div_meta,
+               random = ~ 1 | individual)
+#summary(Model_neutral)
+emmeans(Model_neutral, pairwise ~ treatment)
+```
+
+***Phylogenetic***
+```{r LMM_phylo5, comment="", message=FALSE, warning=FALSE}
+Model_phylo <- lme(fixed = phylogenetic ~ treatment, data = alpha_div_meta,
+               random = ~ 1 | individual)
+#summary(Model_phylo)
+emmeans(Model_phylo, pairwise ~ treatment)
+```
+
+***Functional***
+```{r LMM_func5, comment="", message=FALSE, warning=FALSE}
+Model_funct <- lme(fixed = functional ~ treatment, data = alpha_div_meta,
+               random = ~ 1 | individual)
+#summary(Model_funct)
+emmeans(Model_funct, pairwise ~ treatment)
+```
+
+### Beta diversity
+
+```{r filter_data6, comment="", message=FALSE, warning=FALSE}
+samples_to_keep <- sample_metadata %>%
+  filter(type == "Treatment" & treatment %in% c("Acclimation", "Antibiotics", "Post-FMT1", "Post-FMT2")) %>% 
+  select(sample) %>% 
+  pull()
+subset_meta <- sample_metadata %>%
+  filter(type == "Treatment" & treatment %in% c("Acclimation", "Antibiotics", "Post-FMT1", "Post-FMT2"))
+```
+
+***Richness***
+```{r permanova_rich6, comment="", message=FALSE, warning=FALSE}
+richness <- as.matrix(beta_q0n$S)
+richness <- as.dist(richness[rownames(richness) %in% samples_to_keep,
+               colnames(richness) %in% samples_to_keep])
+
+betadisper(richness, subset_meta$treatment) %>% permutest(.) 
+adonis2(richness ~ treatment,
+        data = subset_meta %>% arrange(match(sample,labels(richness))),
+        permutations = 999,
+        strata = subset_meta %>% arrange(match(sample,labels(richness))) %>% pull(individual)) %>%
+        broom::tidy() %>%
+        tt()
+```
+```{r pairwise_rich6, comment="", message=FALSE, warning=FALSE}
+pairwise.adonis(richness, subset_meta$treatment, perm = 999)
+```
+
+***Neutral***
+```{r permanova_neutral6, comment="", message=FALSE, warning=FALSE}
+neutral <- as.matrix(beta_q1n$S)
+neutral <- as.dist(neutral[rownames(neutral) %in% samples_to_keep,
+               colnames(neutral) %in% samples_to_keep])
+
+betadisper(neutral, subset_meta$treatment) %>% permutest(.) 
+adonis2(neutral ~ treatment,
+        data = subset_meta %>% arrange(match(sample,labels(neutral))),
+        permutations = 999,
+        strata = subset_meta %>% arrange(match(sample,labels(neutral))) %>% pull(individual)) %>%
+        broom::tidy() %>%
+        tt()
+```
+```{r pairwise_neutral6, comment="", message=FALSE, warning=FALSE}
+pairwise.adonis(neutral, subset_meta$treatment, perm = 999)
+```
+
+***Phylogenetic***
+```{r permanova_phylo6, comment="", message=FALSE, warning=FALSE}
+phylo <- as.matrix(beta_q1p$S)
+phylo <- as.dist(phylo[rownames(phylo) %in% samples_to_keep,
+               colnames(phylo) %in% samples_to_keep])
+betadisper(phylo, subset_meta$treatment) %>% permutest(.) 
+adonis2(phylo ~ treatment,
+        data = subset_meta %>% arrange(match(sample,labels(phylo))),
+        permutations = 999,
+        strata = subset_meta %>% arrange(match(sample,labels(phylo))) %>% pull(individual)) %>%
+        broom::tidy() %>%
+        tt()
+```
+```{r pairwise_phylo6, comment="", message=FALSE, warning=FALSE}
+pairwise.adonis(phylo, subset_meta$treatment, perm = 999)
+```
+
+***Functional***
+```{r permanova_func6, comment="", message=FALSE, warning=FALSE}
+func <- as.matrix(beta_q1f$S)
+func <- as.dist(func[rownames(func) %in% samples_to_keep,
+               colnames(func) %in% samples_to_keep])
+betadisper(func, subset_meta$treatment) %>% permutest(.) 
+adonis2(func ~ treatment,
+        data = subset_meta %>% arrange(match(sample,labels(func))),
+        permutations = 999,
+        strata = subset_meta %>% arrange(match(sample,labels(func))) %>% pull(individual)) %>%
+        broom::tidy() %>%
+        tt()
+```
+```{r pairwise_func6, comment="", message=FALSE, warning=FALSE}
+pairwise.adonis(func, subset_meta$treatment, perm = 999)
+```
+
+## Is the gut microbiota similar to the donor after FMT?
+```{r filter_Data7, comment="", message=FALSE, warning=FALSE}
+sample_metadata <- sample_metadata %>%
+    mutate(treatment=case_when(
+    treatment %in% c("Post-FMT1", "Post-FMT2") ~ "FMT",
+    TRUE ~ treatment
+  ))
+
+samples_to_keep <- sample_metadata %>%
+  filter(type == "Treatment" & treatment %in% c("FMT", "Transplant")) %>% 
+  select(sample) %>% 
+  pull()
+
+subset_meta <- sample_metadata %>%
+  filter(type == "Treatment" & treatment %in% c("FMT", "Transplant"))
+```
+
+***Richness***
+```{r permanova_rich7, comment="", message=FALSE, warning=FALSE}
+richness <- as.matrix(beta_q0n$S)
+richness <- as.dist(richness[rownames(richness) %in% samples_to_keep,
+               colnames(richness) %in% samples_to_keep])
+
+betadisper(richness, subset_meta$treatment) %>% permutest(.) 
+adonis2(richness ~ treatment,
+        data = subset_meta %>% arrange(match(sample,labels(richness))),
+        permutations = 999,
+        strata = subset_meta %>% arrange(match(sample,labels(richness))) %>% pull(individual)) %>%
+        broom::tidy() %>%
+        tt()
+```
+```{r pairwise_func, comment="", message=FALSE, warning=FALSE}
+pairwise.adonis(richness, subset_meta$treatment, perm = 999)
+```
+
+***Neutral***
+```{r permanova_neutral7, comment="", message=FALSE, warning=FALSE}
+neutral <- as.matrix(beta_q1n$S)
+neutral <- as.dist(neutral[rownames(neutral) %in% samples_to_keep,
+               colnames(neutral) %in% samples_to_keep])
+
+betadisper(neutral, subset_meta$treatment) %>% permutest(.) 
+adonis2(neutral ~ treatment,
+        data = subset_meta %>% arrange(match(sample,labels(neutral))),
+        permutations = 999,
+        strata = subset_meta %>% arrange(match(sample,labels(neutral))) %>% pull(individual)) %>%
+        broom::tidy() %>%
+        tt()
+```
+```{r pairwise_neutral7, comment="", message=FALSE, warning=FALSE}
+pairwise.adonis(neutral, subset_meta$treatment, perm = 999)
+```
+
+```{r beta_div_nmds_neutral_plot7, comment=""}
+neutral %>%
+  vegan::metaMDS(., trymax = 500, k = 2, trace=0) %>%
+  vegan::scores() %>%
+  as_tibble(., rownames = "sample") %>%
+  dplyr::left_join(subset_meta, by = join_by(sample == sample)) %>%
+  group_by(treatment) %>%
+  mutate(x_cen = mean(NMDS1, na.rm = TRUE)) %>%
+  mutate(y_cen = mean(NMDS2, na.rm = TRUE)) %>%
+  ungroup() %>%
+  ggplot(aes(x = NMDS1, y = NMDS2, color = treatment)) +
+  geom_point(size = 4) +
+ # scale_color_manual(values = treatment_colors) +
+  geom_segment(aes(x = x_cen, y = y_cen, xend = NMDS1, yend = NMDS2), alpha = 0.9, show.legend = FALSE) +
+  theme(
+    axis.title = element_text(size = 12, face = "bold"),
+    axis.text = element_text(size = 10),
+    panel.background = element_blank(),
+    axis.line = element_line(size = 0.5, linetype = "solid", colour = "black"),
+    legend.text = element_text(size = 10),
+    legend.title = element_text(size = 12),
+    legend.position = "right", legend.box = "vertical"
+    )
+```
+
+***Phylogenetic***
+```{r permanova_phylo7, comment="", message=FALSE, warning=FALSE}
+phylo <- as.matrix(beta_q1p$S)
+phylo <- as.dist(phylo[rownames(phylo) %in% samples_to_keep,
+               colnames(phylo) %in% samples_to_keep])
+betadisper(phylo, subset_meta$treatment) %>% permutest(.) 
+adonis2(phylo ~ treatment,
+        data = subset_meta %>% arrange(match(sample,labels(phylo))),
+        permutations = 999,
+        strata = subset_meta %>% arrange(match(sample,labels(phylo))) %>% pull(individual)) %>%
+        broom::tidy() %>%
+        tt()
+```
+```{r pairwise_phylo7, comment="", message=FALSE, warning=FALSE}
+pairwise.adonis(phylo, subset_meta$treatment, perm = 999)
+```
+
+***Functional***
+```{r permanova_func7, comment="", message=FALSE, warning=FALSE}
+func <- as.matrix(beta_q1f$S)
+func <- as.dist(func[rownames(func) %in% samples_to_keep,
+               colnames(func) %in% samples_to_keep])
+betadisper(func, subset_meta$treatment) %>% permutest(.) 
+adonis2(func ~ treatment,
+        data = subset_meta %>% arrange(match(sample,labels(func))),
+        permutations = 999,
+        strata = subset_meta %>% arrange(match(sample,labels(func))) %>% pull(individual)) %>%
+        broom::tidy() %>%
+        tt()
+```
+
+```{r pairwise_func7, comment="", message=FALSE, warning=FALSE}
+pairwise.adonis(func, subset_meta$treatment, perm = 999)
+```
+
+### Structural zeros
+
+```{r struct_zero1, comment="", message=FALSE, warning=FALSE}
+FMT_samples <- sample_metadata %>%
+  filter(type == "Treatment" & treatment == "FMT") %>% 
+  dplyr::select(sample) %>%
+  pull()
+
+Transplant_samples <- sample_metadata %>%
+  filter(type == "Treatment" & treatment =="Transplant") %>% 
+  dplyr::select(sample) %>% pull()
+
+structural_zeros <- genome_counts_filt %>% 
+  select(one_of(c("genome",subset_meta$sample))) %>%
+  filter(rowSums(across(where(is.numeric), ~ . != 0)) > 0) %>%
+  select(genome, where(~ is.numeric(.) && sum(.) > 0)) %>% 
+   rowwise() %>% #compute for each row (genome)
+   mutate(all_zeros_FMT = all(c_across(all_of(FMT_samples)) == 0)) %>% 
+   mutate(all_zeros_Transplant = all(c_across(all_of(Transplant_samples)) == 0)) %>% 
+   mutate(average_FMT = mean(c_across(all_of(FMT_samples)), na.rm = TRUE)) %>% 
+   mutate(average_Transplant = mean(c_across(all_of(Transplant_samples)), na.rm = TRUE)) %>% 
+   filter(all_zeros_FMT == TRUE || all_zeros_Transplant==TRUE)  %>% 
+   mutate(present = case_when(
+      all_zeros_FMT & !all_zeros_Transplant ~ "Transplant",
+      !all_zeros_FMT & all_zeros_Transplant ~ "FMT",
+      !all_zeros_FMT & !all_zeros_Transplant ~ "None",
+      TRUE ~ NA_character_
+    )) %>%
+   mutate(average = ifelse(present == "FMT", average_FMT, average_Transplant)) %>%
+   dplyr::select(genome, present, average) %>%
+   left_join(genome_metadata, by=join_by(genome==genome)) %>%
+   arrange(present,-average)
+structural_zeros
+  
+```
+
+### Differential abundance analysis
+```{r phyloseq, comment="", message=FALSE, warning=FALSE}
+phylo_samples <- sample_metadata %>%
+    mutate(treatment=case_when(
+    treatment %in% c("Post-FMT1", "Post-FMT2") ~ "FMT",
+    TRUE ~ treatment
+  ))%>%
+  filter(type == "Treatment" & treatment %in% c("FMT", "Transplant")) %>% 
+  column_to_rownames("sample") %>%
+  sample_data()
+phylo_genome <- genome_counts_filt %>% 
+  filter(!genome %in% structural_zeros$genome) %>% 
+  select(one_of(c("genome",rownames(phylo_samples)))) %>%
+  filter(rowSums(across(where(is.numeric), ~ . != 0)) > 0) %>%
+  select(genome, where(~ is.numeric(.) && sum(.) > 0)) %>%
+  column_to_rownames("genome") %>% 
+  otu_table(., taxa_are_rows = TRUE)
+phylo_taxonomy <- genome_metadata %>% 
+  filter(genome %in% rownames(phylo_genome)) %>% 
+  column_to_rownames("genome") %>% 
+  dplyr::select(domain,phylum,class,order,family,genus,species) %>% 
+  as.matrix() %>% 
+  tax_table()
+
+physeq_genome_filtered <- phyloseq(phylo_genome, phylo_taxonomy, phylo_samples)
+```
+
+
+```{r ancom_rand_pond, comment="", message=FALSE, warning=FALSE, eval=FALSE}
+set.seed(1234) #set seed for reproducibility
+ancom_rand_output = ancombc2(data = physeq_genome_filtered, 
+                  assay_name = "counts", 
+                  tax_level = NULL,
+                  fix_formula = "treatment",
+                  p_adj_method = "holm", 
+                  pseudo_sens = TRUE,
+                  prv_cut =0, 
+                  lib_cut = 0, 
+                  s0_perc = 0.05,
+                  group = NULL, 
+                  struc_zero = FALSE, 
+                  neg_lb = FALSE,
+                  alpha = 0.05, 
+                  n_cl = 2, 
+                  verbose = TRUE,
+                  global = FALSE, 
+                  pairwise = FALSE, 
+                  dunnet = FALSE, 
+                  trend = FALSE,
+                  iter_control = list(tol = 1e-5, max_iter = 20, verbose = FALSE),
+                  em_control = list(tol = 1e-5, max_iter = 100),
+                  lme_control = lme4::lmerControl(),
+                  mdfdr_control = list(fwer_ctrl_method = "holm", B = 100), 
+                  trend_control = NULL)
+
+```
+
+```{r save_ancombc, warning=FALSE, comments="", message=FALSE, eval=FALSE}
+save(ancom_rand_output, 
+     file = "data/ancombc_FMT_transplant.Rdata")
+```
+
+```{r load_ancombc1, warning=FALSE, comments="", message=FALSE}
+load("data/ancombc_FMT_transplant.Rdata")
+```
+
+```{r ancom_rand, comment="", message=FALSE, warning=FALSE}
+taxonomy <- data.frame(physeq_genome_filtered@tax_table) %>%
+  rownames_to_column(., "taxon") %>%
+  mutate_at(vars(order, phylum, family, genus, species), ~ str_replace(., "[dpcofgs]__", ""))
+
+ancombc_rand_table_mag <- ancom_rand_output$res %>%
+  dplyr::select(taxon, lfc_treatmentTransplant, p_treatmentTransplant) %>%
+  filter(p_treatmentTransplant < 0.05) %>%
+  dplyr::arrange(p_treatmentTransplant) %>%
+  merge(., taxonomy, by="taxon") %>%
+  mutate_at(vars(phylum, species), ~ str_replace(., "[dpcofgs]__", ""))%>%
+  dplyr::arrange(lfc_treatmentTransplant)
+
+ancombc_rand_table_mag
+  
+colors_alphabetic <- read_tsv("https://raw.githubusercontent.com/earthhologenome/EHI_taxonomy_colour/main/ehi_phylum_colors.tsv") %>%
+  mutate_at(vars(phylum), ~ str_replace(., "[dpcofgs]__", ""))  %>%
+  right_join(taxonomy, by=join_by(phylum == phylum)) %>%
+  dplyr::select(phylum, colors) %>%
+  mutate(colors = str_c(colors, "80"))  %>% #add 80% alpha
+	unique() %>%
+	dplyr::arrange(phylum)
+
+tax_table <- as.data.frame(unique(ancombc_rand_table_mag$phylum))
+  
+colnames(tax_table)[1] <- "phylum"
+tax_color <- merge(tax_table, colors_alphabetic, by="phylum")%>%
+	dplyr::arrange(phylum) %>%
+	dplyr::select(colors) %>%
+	pull()
+```
+```{r ancombc_rand_plot_phy, comment="", message=FALSE, warning=FALSE, fig.height=10, fig.width=8, fig.fullwidth=TRUE}
+ancombc_rand_table_mag%>%
+      mutate(genome=factor(taxon,levels=ancombc_rand_table_mag$taxon)) %>%
+ggplot(., aes(x=lfc_treatmentTransplant, y=forcats::fct_reorder(genome,lfc_treatmentTransplant), fill=phylum)) + #forcats::fct_rev()
+  geom_col() + 
+  scale_fill_manual(values=tax_color) + 
+  geom_hline(yintercept=0) + 
+#  coord_flip()+
+  theme(panel.background = element_blank(),
+        axis.line = element_line(size = 0.5, linetype = "solid", colour = "black"),
+        axis.text.x = element_text(size = 12),
+        axis.text.y = element_text(size = 8),
+        axis.title = element_text(size = 14, face = "bold"),
+        legend.text = element_text(size = 12),
+        legend.title = element_text(size = 14, face = "bold"),
+        legend.position = "right", legend.box = "vertical")+
+  xlab("log2FoldChange") + 
+  ylab("Species")+
+  guides(fill=guide_legend(title="Phylum"))
+```
+
+
+
+***Including structural zeros in Ancombc***
+```{r zero_phylo1, comment="", message=FALSE, warning=FALSE}
+phylo_samples <- sample_metadata %>%
+    mutate(treatment=case_when(
+    treatment %in% c("Post-FMT1", "Post-FMT2") ~ "FMT",
+    TRUE ~ treatment
+  ))%>%
+  filter(type == "Treatment" & treatment %in% c("FMT", "Transplant")) %>% 
+  column_to_rownames("sample") %>%
+  sample_data()
+phylo_genome <- genome_counts_filt %>%
+  select(one_of(c("genome",rownames(phylo_samples)))) %>%
+  column_to_rownames("genome") %>% 
+  otu_table(., taxa_are_rows = TRUE)
+phylo_taxonomy <- genome_metadata %>%
+  filter(genome %in% rownames(phylo_genome)) %>% 
+  dplyr::select(genome,domain,phylum,class,order,family,genus,species) %>% 
+  column_to_rownames("genome") %>% 
+  as.matrix() %>% 
+  tax_table()
+
+physeq_genome_filtered <- phyloseq(phylo_genome, phylo_taxonomy, phylo_samples)
+physeq_genome_filtered <- prune_taxa(taxa_sums(physeq_genome_filtered) > 0, physeq_genome_filtered)
+```
+
+```{r ancom_rand2, comment="", message=FALSE, warning=FALSE, eval=FALSE}
+ancom_rand_output_mag_struc = ancombc2(data = physeq_genome_filtered, 
+                  assay_name = "counts", 
+                  tax_level = NULL, 
+                  fix_formula = "treatment", 
+                  p_adj_method = "holm", 
+                  pseudo_sens = TRUE,
+                  prv_cut =0, 
+                  lib_cut = 0, 
+                  s0_perc = 0.05,
+                  group = "treatment", 
+                  struc_zero = TRUE, 
+                  neg_lb = TRUE,
+                  alpha = 0.05, 
+                  n_cl = 2, 
+                  verbose = TRUE,
+                  global = FALSE, 
+                  pairwise = FALSE, 
+                  dunnet = FALSE, 
+                  trend = FALSE,
+                  iter_control = list(tol = 1e-5, max_iter = 20, verbose = FALSE),
+                  em_control = list(tol = 1e-5, max_iter = 100),
+  #                lme_control = lme4::lmerControl(),
+                  mdfdr_control = list(fwer_ctrl_method = "holm", B = 100), 
+                  trend_control = NULL)
+```
+```{r save_ancombc_struc, warning=FALSE, comments="", message=FALSE, eval=FALSE}
+save(ancom_rand_output_mag_struc, 
+     file = "data/ancombc_FMT_transplant_struc.Rdata")
+```
+
+```{r load_ancombc_struc, warning=FALSE, comments="", message=FALSE}
+load("data/ancombc_FMT_transplant_struc.Rdata")
+```
+```{r ancom_table_capwild, comment="", message=FALSE, warning=FALSE}
+ancombc_rand_table_mag <- ancom_rand_output_mag_struc$res %>%
+  dplyr::select(taxon, lfc_treatmentTransplant, p_treatmentTransplant) %>%
+  filter(p_treatmentTransplant < 0.05) %>%
+  dplyr::arrange(p_treatmentTransplant) %>%
+  left_join(genome_metadata, by = join_by(taxon == genome)) %>%
+  dplyr::arrange(lfc_treatmentTransplant)
+  
+colors_alphabetic <- read_tsv("https://raw.githubusercontent.com/earthhologenome/EHI_taxonomy_colour/main/ehi_phylum_colors.tsv") %>%
+  right_join(ancombc_rand_table_mag, by=join_by(phylum == phylum)) %>%
+  dplyr::select(phylum, colors) %>%
+  mutate(colors = str_c(colors, "80"))  %>% #add 80% alpha
+	unique() %>%
+	dplyr::arrange(phylum)
+
+tax_table <- as.data.frame(unique(ancombc_rand_table_mag$phylum))
+  
+colnames(tax_table)[1] <- "phylum"
+tax_color <- merge(tax_table, colors_alphabetic, by="phylum")%>%
+	dplyr::arrange(phylum) %>%
+	dplyr::select(colors) %>%
+	pull()
+ancombc_rand_table_mag
+```
+
+```{r ancombc_rand_plot_capwild, comment="", message=FALSE, warning=FALSE, fig.height=10, fig.width=8, fig.fullwidth=TRUE}
+ancombc_rand_table_mag%>%
+      mutate(genome=factor(taxon,levels=ancombc_rand_table_mag$taxon)) %>%
+ggplot(., aes(x=lfc_treatmentTransplant, y=forcats::fct_reorder(genome,lfc_treatmentTransplant), fill=phylum)) + #forcats::fct_rev()
+  geom_col() + 
+  scale_fill_manual(values=tax_color) + 
+  geom_hline(yintercept=0) + 
+#  coord_flip()+
+  theme(panel.background = element_blank(),
+        axis.line = element_line(size = 0.5, linetype = "solid", colour = "black"),
+        axis.text.x = element_text(size = 12),
+        axis.text.y = element_text(size = 6),
+        axis.title = element_text(size = 14, face = "bold"),
+        legend.text = element_text(size = 12),
+        legend.title = element_text(size = 14, face = "bold"),
+        legend.position = "right", legend.box = "vertical")+
+  xlab("log2FoldChange") + 
+  ylab("Genome")+
+  guides(fill=guide_legend(title="Phylum"))
+```
