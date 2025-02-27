@@ -751,7 +751,7 @@ alpha_div %>%
 
 ***Richness***
 ```{r LMM, comment="", message=FALSE, warning=FALSE}
-Modelq0GLMMNB <- glmer.nb(neutral ~ time_point+(1|individual), data = alpha_div_meta)
+Modelq0GLMMNB <- glmer.nb(richness ~ time_point+(1|individual), data = alpha_div_meta)
 summary(Modelq0GLMMNB)
 ```
 
