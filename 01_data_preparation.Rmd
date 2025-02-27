@@ -141,22 +141,19 @@ Remove antibiotics and transplant samples
 
 ```{r filterging_2, echo=TRUE, warning=FALSE, eval=FALSE}
 #Counts_raw
-columns_to_exclude <- c("AD16","AD23", "AD25", "AD91", "AFU87", "AFU88", "AFU91", "AFU92", "AFU93", "AFU94", "AFU98", "AFU95", "AFU99", "AFU96", "AFV02", "AFU97", "AFV03", "AFV04", "AFV01", "AFV05", "AFV06", "AFV07",
-                        "AFV08", "AFV09", "AFV10", "AFV11", "AFV12", "AFV14", "AFV15", "AFV16", "AFV17") # Columns to exclude
+columns_to_exclude <- c("AD16","AD23", "AD25", "AD91") # Columns to exclude
 read_counts <- read_counts %>%
   select(-columns_to_exclude)
 
 #Metadata
 sample_metadata <- sample_metadata %>%
-  filter(time_point != "0_Wild")%>%
   filter(Tube_code != "AD16") %>%
   filter(Tube_code != "AD23") %>%
   filter(Tube_code != "AD25") %>%
   filter(Tube_code != "AD91")
 
 #Coverage_table
-columns_to_exclude <- c("AD16","AD23", "AD25", "AD91", "AFU87", "AFU88", "AFU91", "AFU92", "AFU93", "AFU94", "AFU98", "AFU95", "AFU99", "AFU96", "AFV02", "AFU97", "AFV03", "AFV04", "AFV01", "AFV05", "AFV06", "AFV07",
-                        "AFV08", "AFV09", "AFV10", "AFV11", "AFV12", "AFV14", "AFV15", "AFV16", "AFV17")  # Columns to exclude
+columns_to_exclude <- c("AD16","AD23", "AD25", "AD91")  # Columns to exclude
 genome_coverage <- genome_coverage %>%
   select(-columns_to_exclude)
 ```
@@ -227,37 +224,10 @@ raw_reads <-
   rename(sample = sample_prefix)  %>%
   mutate(sample = str_remove(sample, "^fastp \\|\\s*")) %>%
   filter(sample!="AD16") %>%
-  filter(sample!="AFV08") %>%
+  filter(sample!="AFV13") %>%
   filter(sample!="AD23") %>%
   filter(sample!= "AD25") %>%
-  filter(sample!= "AD91") %>%
-  filter(sample!= "AFU87") %>%
-  filter(sample!= "AFU88") %>%
-  filter(sample!= "AFU91") %>%
-  filter(sample!= "AFU92") %>%
-  filter(sample!= "AFU93") %>%
-  filter(sample!= "AFU94") %>%
-  filter(sample!= "AFU98") %>%
-  filter(sample!= "AFU95") %>%
-  filter(sample!= "AFU99") %>%
-  filter(sample!= "AFU96") %>%
-  filter(sample!= "AFV02") %>%
-  filter(sample!= "AFU97") %>%
-  filter(sample!= "AFV03") %>%
-  filter(sample!= "AFV04") %>%
-  filter(sample!= "AFV01") %>%
-  filter(sample!= "AFV05") %>%
-  filter(sample!= "AFV06") %>%
-  filter(sample!= "AFV07") %>%
-  filter(sample!= "AFV09") %>%
-  filter(sample!= "AFV10") %>%
-  filter(sample!= "AFV11") %>%
-  filter(sample!= "AFV12") %>%
-  filter(sample!= "AFV14") %>%
-  filter(sample!= "AFV15") %>%
-  filter(sample!= "AFV16") %>%
-  filter(sample!= "AFV17") %>%
-  filter(sample!= "AFV13")
+  filter(sample!= "AD91")
 ```
 
 ### Quality-filtered reads
@@ -279,37 +249,10 @@ fastp_reads <-
   filter(!str_detect(sample, "refseq500 \\|"))  %>%
   mutate(sample = str_remove(sample, "^fastp \\|\\s*")) %>%
   filter(sample!="AD16") %>%
-  filter(sample!="AFV08") %>%
+  filter(sample!="AFV13") %>%
   filter(sample!="AD23") %>%
   filter(sample!= "AD25") %>%
-  filter(sample!= "AD91") %>%
-  filter(sample!= "AFU87") %>%
-  filter(sample!= "AFU88") %>%
-  filter(sample!= "AFU91") %>%
-  filter(sample!= "AFU92") %>%
-  filter(sample!= "AFU93") %>%
-  filter(sample!= "AFU94") %>%
-  filter(sample!= "AFU98") %>%
-  filter(sample!= "AFU95") %>%
-  filter(sample!= "AFU99") %>%
-  filter(sample!= "AFU96") %>%
-  filter(sample!= "AFV02") %>%
-  filter(sample!= "AFU97") %>%
-  filter(sample!= "AFV03") %>%
-  filter(sample!= "AFV04") %>%
-  filter(sample!= "AFV01") %>%
-  filter(sample!= "AFV05") %>%
-  filter(sample!= "AFV06") %>%
-  filter(sample!= "AFV07") %>%
-  filter(sample!= "AFV09") %>%
-  filter(sample!= "AFV10") %>%
-  filter(sample!= "AFV11") %>%
-  filter(sample!= "AFV12") %>%
-  filter(sample!= "AFV14") %>%
-  filter(sample!= "AFV15") %>%
-  filter(sample!= "AFV16") %>%
-  filter(sample!= "AFV17") %>%
-  filter(sample!= "AFV13")
+  filter(sample!= "AD91")
 ```
 
 ### Host-mapped reads
@@ -347,37 +290,10 @@ host_mapped <-
     mapped_lizard = sum(mapped_lizard),
     unmapped_lizard = sum(unmapped_lizard)) %>%
   filter(sample!="AD16") %>%
-  filter(sample!="AFV08") %>%
+  filter(sample!="AFV13") %>%
   filter(sample!="AD23") %>%
   filter(sample!= "AD25") %>%
-  filter(sample!= "AD91") %>%
-  filter(sample!= "AFU87") %>%
-  filter(sample!= "AFU88") %>%
-  filter(sample!= "AFU91") %>%
-  filter(sample!= "AFU92") %>%
-  filter(sample!= "AFU93") %>%
-  filter(sample!= "AFU94") %>%
-  filter(sample!= "AFU98") %>%
-  filter(sample!= "AFU95") %>%
-  filter(sample!= "AFU99") %>%
-  filter(sample!= "AFU96") %>%
-  filter(sample!= "AFV02") %>%
-  filter(sample!= "AFU97") %>%
-  filter(sample!= "AFV03") %>%
-  filter(sample!= "AFV04") %>%
-  filter(sample!= "AFV01") %>%
-  filter(sample!= "AFV05") %>%
-  filter(sample!= "AFV06") %>%
-  filter(sample!= "AFV07") %>%
-  filter(sample!= "AFV09") %>%
-  filter(sample!= "AFV10") %>%
-  filter(sample!= "AFV11") %>%
-  filter(sample!= "AFV12") %>%
-  filter(sample!= "AFV14") %>%
-  filter(sample!= "AFV15") %>%
-  filter(sample!= "AFV16") %>%
-  filter(sample!= "AFV17") %>%
-  filter(sample!= "AFV13")
+  filter(sample!= "AD91")
 ```
 
 ### Prokaryotic fraction
@@ -407,37 +323,10 @@ mutate(sample_prefix = str_extract(sample, "^[^_]+")) %>%
   ) %>%
   rename(sample = sample_prefix)%>%
    filter(sample!="AD16") %>%
-  filter(sample!="AFV08") %>%
+  filter(sample!="AFV13") %>%
   filter(sample!="AD23") %>%
   filter(sample!= "AD25") %>%
-  filter(sample!= "AD91") %>%
-  filter(sample!= "AFU87") %>%
-  filter(sample!= "AFU88") %>%
-  filter(sample!= "AFU91") %>%
-  filter(sample!= "AFU92") %>%
-  filter(sample!= "AFU93") %>%
-  filter(sample!= "AFU94") %>%
-  filter(sample!= "AFU98") %>%
-  filter(sample!= "AFU95") %>%
-  filter(sample!= "AFU99") %>%
-  filter(sample!= "AFU96") %>%
-  filter(sample!= "AFV02") %>%
-  filter(sample!= "AFU97") %>%
-  filter(sample!= "AFV03") %>%
-  filter(sample!= "AFV04") %>%
-  filter(sample!= "AFV01") %>%
-  filter(sample!= "AFV05") %>%
-  filter(sample!= "AFV06") %>%
-  filter(sample!= "AFV07") %>%
-  filter(sample!= "AFV09") %>%
-  filter(sample!= "AFV10") %>%
-  filter(sample!= "AFV11") %>%
-  filter(sample!= "AFV12") %>%
-  filter(sample!= "AFV14") %>%
-  filter(sample!= "AFV15") %>%
-  filter(sample!= "AFV16") %>%
-  filter(sample!= "AFV17") %>%
-  filter(sample!= "AFV13")
+  filter(sample!= "AD91")
 ```
 
 ### MAG-mapped reads
@@ -455,37 +344,10 @@ mag_mapping <-
     ) %>%
     rename(sample = sample_prefix)%>%
   filter(sample!="AD16") %>%
-  filter(sample!="AFV08") %>%
+  filter(sample!="AFV13") %>%
   filter(sample!="AD23") %>%
   filter(sample!= "AD25") %>%
-  filter(sample!= "AD91") %>%
-  filter(sample!= "AFU87") %>%
-  filter(sample!= "AFU88") %>%
-  filter(sample!= "AFU91") %>%
-  filter(sample!= "AFU92") %>%
-  filter(sample!= "AFU93") %>%
-  filter(sample!= "AFU94") %>%
-  filter(sample!= "AFU98") %>%
-  filter(sample!= "AFU95") %>%
-  filter(sample!= "AFU99") %>%
-  filter(sample!= "AFU96") %>%
-  filter(sample!= "AFV02") %>%
-  filter(sample!= "AFU97") %>%
-  filter(sample!= "AFV03") %>%
-  filter(sample!= "AFV04") %>%
-  filter(sample!= "AFV01") %>%
-  filter(sample!= "AFV05") %>%
-  filter(sample!= "AFV06") %>%
-  filter(sample!= "AFV07") %>%
-  filter(sample!= "AFV09") %>%
-  filter(sample!= "AFV10") %>%
-  filter(sample!= "AFV11") %>%
-  filter(sample!= "AFV12") %>%
-  filter(sample!= "AFV14") %>%
-  filter(sample!= "AFV15") %>%
-  filter(sample!= "AFV16") %>%
-  filter(sample!= "AFV17") %>%
-  filter(sample!= "AFV13")
+  filter(sample!= "AD91")
 ```
 
 ### Wrap data statistics
