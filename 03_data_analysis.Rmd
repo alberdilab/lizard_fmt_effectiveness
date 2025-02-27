@@ -311,13 +311,13 @@ adonis2(func ~ time_point,
 
 ### Structural zeros
 ```{r struct_zero_accli, comment="", message=FALSE, warning=FALSE}
-acclimation_samples <- sample_metadata %>%
-  filter(Population == "Cold_wet" & time_point == "1_Acclimation") %>% 
+wild_samples <- sample_metadata %>%
+  filter(Population == "Cold_wet" & time_point == "0_Wild") %>% 
   dplyr::select(sample) %>%
   pull()
 
-wild_samples <- sample_metadata %>%
-  filter(Population == "Cold_wet" & time_point == "0_Wild") %>% 
+acclimation_samples <- sample_metadata %>%
+  filter(Population == "Cold_wet" & time_point == "1_Acclimation") %>% 
   dplyr::select(sample) %>% pull()
 
 structural_zeros <- genome_counts_filt %>% 
@@ -325,35 +325,35 @@ structural_zeros <- genome_counts_filt %>%
   filter(rowSums(across(where(is.numeric), ~ . != 0)) > 0) %>%
   select(genome, where(~ is.numeric(.) && sum(.) > 0)) %>% 
    rowwise() %>% #compute for each row (genome)
-   mutate(all_zeros_acclimation = all(c_across(all_of(acclimation_samples)) == 0)) %>% 
-   mutate(all_zeros_wild= all(c_across(all_of(wild_samples)) == 0)) %>% 
-   mutate(average_acclimation = mean(c_across(all_of(acclimation_samples)), na.rm = TRUE)) %>% 
+   mutate(all_zeros_wild = all(c_across(all_of(wild_samples)) == 0)) %>% 
+   mutate(all_zeros_acclimation= all(c_across(all_of(acclimation_samples)) == 0)) %>% 
    mutate(average_wild = mean(c_across(all_of(wild_samples)), na.rm = TRUE)) %>% 
-   filter(all_zeros_acclimation == TRUE || all_zeros_wild==TRUE)  %>% 
+   mutate(average_acclimation = mean(c_across(all_of(acclimation_samples)), na.rm = TRUE)) %>% 
+   filter(all_zeros_wild == TRUE || all_zeros_acclimation==TRUE)  %>% 
    mutate(present = case_when(
-      all_zeros_acclimation & !all_zeros_wild ~ "wild",
-      !all_zeros_acclimation & all_zeros_wild ~ "acclimation",
-      !all_zeros_acclimation & !all_zeros_wild ~ "None",
+      all_zeros_wild & !all_zeros_acclimation ~ "acclimation",
+      !all_zeros_wild & all_zeros_acclimation ~ "wild",
+      !all_zeros_wild & !all_zeros_acclimation ~ "None",
       TRUE ~ NA_character_
     )) %>%
-   mutate(average = ifelse(present == "acclimation", average_acclimation, average_wild)) %>%
+   mutate(average = ifelse(present == "acclimation", average_wild, average_acclimation)) %>%
    dplyr::select(genome, present, average) %>%
    left_join(genome_metadata, by=join_by(genome==genome)) %>%
    arrange(present,-average)
 ```
 
-***Acclimation***
+***Wild***
 ```{r structural_zeros_accli_1, comment="", message=FALSE, warning=FALSE}
 structural_zeros %>% 
-  filter(present=="acclimation") %>% 
+  filter(present=="wild") %>% 
   count(phylum, name = "sample_count") %>%
   arrange(desc(sample_count)) 
 ```
 
-***Wild***
+***Acclimation***
 ```{r structural_zeros_wild, comment="", message=FALSE, warning=FALSE}
 structural_zeros %>% 
-  filter(present=="wild") %>% 
+  filter(present=="acclimation") %>% 
   select(1,5:10)
 ```
 
@@ -399,7 +399,7 @@ element_gift %>%
 ### Differential abundance analysis: composition
 ```{r phylo_acclim_wild, comment="", message=FALSE, warning=FALSE}
 phylo_samples <- sample_metadata %>%
-  filter(Population == "Cold_wet" & time_point %in% c("1_Acclimation", "0_Wild") )%>% 
+  filter(Population == "Cold_wet" & time_point %in% c("0_Wild", "1_Acclimation") )%>% 
   column_to_rownames("sample") %>% 
   sample_data()
 phylo_genome <- genome_counts_filt %>% 
