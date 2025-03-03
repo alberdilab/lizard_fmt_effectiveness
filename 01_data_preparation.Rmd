@@ -7,7 +7,17 @@ Load the original data files outputted by the bioinformatic pipeline.
 ### Sample metadata
 
 ```{r load_sample_metadata, warning=FALSE, comments="", message=FALSE, eval=FALSE}
-sample_metadata <- read_tsv("data/metadata.tsv")
+sample_metadata <- read_tsv("data/metadata.tsv")%>%
+  mutate(time_point = sub("^\\d+_", "", time_point)) %>% 
+  filter(!(time_point == "Wild" & Population == "Hot_dry")) %>% 
+  filter(!(time_point == "Transplant1" & type == "Control")) %>% 
+  filter(!(time_point == "Transplant2" & type == "Control")) %>% 
+  filter(!(time_point == "Post-FMT1" & type == "Control")) %>% 
+  filter(!(time_point == "Post-FMT2" & type == "Control")) %>% 
+  filter(!(time_point == "Post-FMT1" & type == "Hot_control")) %>% 
+  filter(!(time_point == "Post-FMT2" & type == "Hot_control")) %>% 
+  filter(individual!="LI1_2nd_6") %>% 
+  mutate(time_point=str_remove_all(time_point, "Post-"))
 ```
 
 ### Read counts
@@ -137,7 +147,7 @@ genome_coverage <- genome_hits %>%
 
 ## Filtering
 
-Remove antibiotics and transplant samples
+Remove low sequencing depth samples
 
 ```{r filterging_2, echo=TRUE, warning=FALSE, eval=FALSE}
 #Counts_raw
@@ -154,27 +164,6 @@ sample_metadata <- sample_metadata %>%
 
 #Coverage_table
 columns_to_exclude <- c("AD16","AD23", "AD25", "AD91")  # Columns to exclude
-genome_coverage <- genome_coverage %>%
-  select(-columns_to_exclude)
-```
-
-```{r filterging_3, echo=TRUE, warning=FALSE, eval=FALSE}
-##Removal of samples of individual LI1_2nd_6
-#Counts_raw
-columns_to_exclude <- c("AFV13","AD06", "AD31", "AE03", "AF12") # Columns to exclude
-read_counts <- read_counts %>%
-  select(-columns_to_exclude)
-
-#Metadata
-sample_metadata<- sample_metadata %>%
-  filter(Tube_code != "AFV13") %>%
-  filter(Tube_code != "AD06") %>%
-  filter(Tube_code != "AD31") %>%
-  filter(Tube_code != "AE03") %>%
-  filter(Tube_code != "AF12") 
-
-#Coverage_table
-columns_to_exclude <- c("AFV13","AD06", "AD31", "AE03", "AF12")  # Columns to exclude
 genome_coverage <- genome_coverage %>%
   select(-columns_to_exclude)
 ```
@@ -392,9 +381,9 @@ save(sample_metadata,
      genome_tree,
      phylum_colors,
      data_stats,
-     file = "data/data.Rdata")
+     file = "data/03032025data.Rdata")
 ```
 ```{r wrap_working_objects_2, warning=FALSE, comments="", message=FALSE, eval=FALSE}
 save(genome_gifts, 
-     file = "data/gifts.Rdata")
+     file = "data/03032025gifts.Rdata")
 ```

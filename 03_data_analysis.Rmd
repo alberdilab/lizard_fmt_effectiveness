@@ -7,9 +7,9 @@ set.seed(1802)
 ```
 
 ```{r load_data_community}
-load("data/data.Rdata")
-load("data/gifts.Rdata")
-load("data/beta_27022025.Rdata")
+load("data/03032025data.Rdata")
+load("data/03032025gifts.Rdata")
+load("data/beta_03032025.Rdata")
 ```
 
 ```{r data, comment="", message=FALSE, warning=FALSE}
@@ -108,26 +108,10 @@ genome_counts_filt1 <- genome_counts_filt1 %>%
       filter(rowSums(. != 0, na.rm = TRUE) > 0) %>% 
   rownames_to_column(., "genome")
 
-dist <- genome_gifts1 %>%
-  to.elements(., GIFT_db) %>%
-  traits2dist(., method = "gower")
-
-functional <- genome_counts_filt1 %>%
-  filter(genome %in% rownames(dist)) %>% 
-  column_to_rownames(var = "genome") %>%
-  dplyr::select(where(~ !all(. == 0))) %>%
-  hilldiv(., q = 1, dist = dist) %>%
-  t() %>%
-  as.data.frame() %>%
-  dplyr::rename(functional = 1) %>%
-  rownames_to_column(var = "sample") %>%
-  mutate(functional = if_else(is.nan(functional), 1, functional))
-
 # Merge all metrics
 alpha_div <- richness %>%
   full_join(neutral, by = join_by(sample == sample)) %>%
-  full_join(phylogenetic, by = join_by(sample == sample))%>%
-  full_join(functional, by = join_by(sample == sample))
+  full_join(phylogenetic, by = join_by(sample == sample))
 ```
 ```{r colors, comment="", message=FALSE, warning=FALSE}
 treatment_colors <- c('#008080', "#d57d2c")
@@ -157,24 +141,13 @@ beta_q1p <- genome_counts_filt %>%
 genome_gifts1 <- genome_gifts[genome_counts_filt$genome,]
 genome_gifts1 <- genome_gifts1[, colSums(genome_gifts1 != 0) > 0]
 genome_counts_filt1 <- genome_counts_filt[genome_counts_filt$genome %in% rownames(genome_gifts1),]
-
-dist <- genome_gifts1 %>%
-  to.elements(., GIFT_db) %>%
-  traits2dist(., method = "gower")
-
-beta_q1f <- genome_counts_filt1 %>%
-  column_to_rownames(., "genome") %>%
-  filter(rowSums(. != 0, na.rm = TRUE) > 0) %>%
-  select_if(~!all(. == 0)) %>%
-  hillpair(., q = 1, dist = dist)
 ```
 
 ```{r save_beta, comment="", message=FALSE,warning=FALSE, eval=FALSE}
 save(beta_q0n, 
      beta_q1n, 
      beta_q1p, 
-     beta_q1f, 
-     file = "data/beta_27022025.Rdata")
+     file = "data/beta_03032025.Rdata")
 ```
 
 ## Does captivity change the microbial community?
@@ -182,22 +155,50 @@ save(beta_q0n,
 ```{r filter_data_accli, comment="", message=FALSE, warning=FALSE}
 alpha_div_meta <- alpha_div %>%
   left_join(sample_metadata, by = join_by(sample == sample))%>%
-  filter(Population == "Cold_wet" & time_point %in% c("1_Acclimation", "0_Wild") ) 
+  filter(Population == "Cold_wet" & time_point %in% c("Acclimation", "Wild") ) 
+```
+
+### Shapiro test
+
+```{r shapiro_accli, comment="", message=FALSE, warning=FALSE}
+alpha_div %>%
+  pivot_longer(-sample, names_to = "metric", values_to = "value") %>%
+  left_join(., sample_metadata, by = join_by(sample == Tube_code)) %>%
+  filter(Population == "Cold_wet" & time_point %in% c("Acclimation", "Wild") ) %>% 
+  filter(metric=="richness") %>% 
+  summarize(shapiro_p_value = shapiro.test(value)$p.value) %>%
+  pull(shapiro_p_value)
+
+alpha_div %>%
+  pivot_longer(-sample, names_to = "metric", values_to = "value") %>%
+  left_join(., sample_metadata, by = join_by(sample == Tube_code)) %>%
+  filter(Population == "Cold_wet" & time_point %in% c("Acclimation", "Wild") ) %>% 
+  filter(metric=="neutral") %>% 
+  summarize(shapiro_p_value = shapiro.test(value)$p.value) %>%
+  pull(shapiro_p_value)
+
+alpha_div %>%
+  pivot_longer(-sample, names_to = "metric", values_to = "value") %>%
+  left_join(., sample_metadata, by = join_by(sample == Tube_code)) %>%
+  filter(Population == "Cold_wet" & time_point %in% c("Acclimation", "Wild") ) %>% 
+  filter(metric=="phylogenetic") %>% 
+  summarize(shapiro_p_value = shapiro.test(value)$p.value) %>%
+  pull(shapiro_p_value)
 ```
 
 ### Alpha diversity
+
 ```{r alpha_div_plot_1_accli, comment="", message=FALSE, warning=FALSE}
 alpha_div %>%
   pivot_longer(-sample, names_to = "metric", values_to = "value") %>%
   left_join(., sample_metadata, by = "sample") %>%
-  mutate(metric=factor(metric,levels=c("richness","neutral","phylogenetic", "functional"))) %>%
-  filter(Population == "Cold_wet" & time_point %in% c("1_Acclimation", "0_Wild") ) %>% 
+  mutate(metric=factor(metric,levels=c("richness"))) %>%
+  filter(Population == "Cold_wet" & time_point %in% c("Acclimation", "Wild") ) %>% 
   ggplot(aes(y = value, x = time_point, color=time_point, fill=time_point)) +
   geom_jitter(width = 0.2, show.legend = FALSE) +
   geom_boxplot(width = 0.5, alpha=0.5, outlier.shape = NA, show.legend = FALSE) +
   scale_color_manual(values=treatment_colors)+
   scale_fill_manual(values=treatment_colors) +
-  facet_wrap(. ~ metric, scales = "free") +
   stat_compare_means(method = "wilcox.test", show.legend = F, size = 3, label.x = c(1.5))+
   theme_classic() +
   theme(
@@ -213,6 +214,36 @@ alpha_div %>%
       ) +
   ylab("Alpha diversity")
 ```
+
+```{r alpha_div_plot_2_accli, comment="", message=FALSE, warning=FALSE}
+alpha_div %>%
+  pivot_longer(-sample, names_to = "metric", values_to = "value") %>%
+  left_join(., sample_metadata, by = "sample") %>%
+  mutate(metric=factor(metric,levels=c("neutral","phylogenetic"))) %>%
+  filter(metric!="richness") %>%
+  filter(Population == "Cold_wet" & time_point %in% c("Acclimation", "Wild") ) %>%
+  ggplot(aes(y = value, x = time_point, color=time_point, fill=time_point)) +
+  geom_jitter(width = 0.2, show.legend = FALSE) +
+  geom_boxplot(width = 0.5, alpha=0.5, outlier.shape = NA, show.legend = FALSE) +
+  scale_color_manual(values=treatment_colors)+
+  scale_fill_manual(values=treatment_colors) +
+  facet_wrap(. ~ metric, scales = "free") +
+  stat_compare_means(method = "t.test", show.legend = F, size = 3, label.x = c(1.5))+
+  theme_classic() +
+  theme(
+    strip.background = element_blank(),
+    panel.grid.minor.x = element_line(size = .1, color = "grey"),
+    axis.title.x = element_blank(),
+    axis.title.y = element_text(size=10),
+    axis.text.x = element_text(angle = 45, hjust = 1),
+    # Increase plot size
+    plot.title = element_text(size = 10),
+    axis.text = element_text(size = 8),
+    axis.title = element_text(size = 8)
+      ) +
+  ylab("Alpha diversity")
+```
+
 
 ***Richness***
 ```{r LMM_accli, comment="", message=FALSE, warning=FALSE}
@@ -234,21 +265,14 @@ Model_phylo <- lme(fixed = phylogenetic ~ time_point, data = alpha_div_meta,
 summary(Model_phylo)
 ```
 
-***Functional***
-```{r LMM_func_accli, comment="", message=FALSE, warning=FALSE}
-Model_funct <- lme(fixed = functional ~ time_point, data = alpha_div_meta,
-               random = ~ 1 | individual)
-summary(Model_funct)
-```
-
 ### Beta diversity
 ```{r filter_data1_accli, comment="", message=FALSE, warning=FALSE}
 samples_to_keep <- sample_metadata %>%
-  filter(Population == "Cold_wet" & time_point %in% c("1_Acclimation", "0_Wild")) %>% 
+  filter(Population == "Cold_wet" & time_point %in% c("Acclimation", "Wild")) %>% 
   select(Tube_code) %>% 
   pull()
 subset_meta <- sample_metadata %>%
-  filter(Population == "Cold_wet" & time_point %in% c("1_Acclimation", "0_Wild"))
+  filter(Population == "Cold_wet" & time_point %in% c("Acclimation", "Wild"))
 ```
 
 ***Richness***
@@ -295,29 +319,15 @@ adonis2(phylo ~ time_point,
         tt()
 ```
 
-***Functional***
-```{r permanova_func_accli, comment="", message=FALSE, warning=FALSE}
-func <- as.matrix(beta_q1f$S)
-func <- as.dist(func[rownames(func) %in% samples_to_keep,
-               colnames(func) %in% samples_to_keep])
-betadisper(func, subset_meta$time_point) %>% permutest(.) 
-adonis2(func ~ time_point,
-        data = subset_meta %>% arrange(match(Tube_code,labels(func))),
-        permutations = 999,
-        strata = subset_meta %>% arrange(match(Tube_code,labels(func))) %>% pull(individual)) %>%
-        broom::tidy() %>%
-        tt()
-```
-
 ### Structural zeros
 ```{r struct_zero_accli, comment="", message=FALSE, warning=FALSE}
 wild_samples <- sample_metadata %>%
-  filter(Population == "Cold_wet" & time_point == "0_Wild") %>% 
+  filter(Population == "Cold_wet" & time_point == "Wild") %>% 
   dplyr::select(sample) %>%
   pull()
 
 acclimation_samples <- sample_metadata %>%
-  filter(Population == "Cold_wet" & time_point == "1_Acclimation") %>% 
+  filter(Population == "Cold_wet" & time_point == "Acclimation") %>% 
   dplyr::select(sample) %>% pull()
 
 structural_zeros <- genome_counts_filt %>% 
@@ -399,7 +409,7 @@ element_gift %>%
 ### Differential abundance analysis: composition
 ```{r phylo_acclim_wild, comment="", message=FALSE, warning=FALSE}
 phylo_samples <- sample_metadata %>%
-  filter(Population == "Cold_wet" & time_point %in% c("0_Wild", "1_Acclimation") )%>% 
+  filter(Population == "Cold_wet" & time_point %in% c("Wild", "Acclimation") )%>% 
   column_to_rownames("sample") %>% 
   sample_data()
 phylo_genome <- genome_counts_filt %>% 
@@ -711,29 +721,84 @@ difference_table%>%
   tt() 
 ```
 
-
-
 ## Does the antibiotic administration change the microbial community?
 ```{r filter_data, comment="", message=FALSE, warning=FALSE}
 alpha_div_meta <- alpha_div %>%
   left_join(sample_metadata, by = join_by(sample == sample))%>%
-  filter(Population == "Cold_wet" & time_point %in% c("1_Acclimation", "2_Antibiotics") ) 
+  filter(Population == "Cold_wet" & time_point %in% c("Acclimation", "Antibiotics") ) 
 ```
+
+### Shapiro test
+
+```{r shapiro_antib, comment="", message=FALSE, warning=FALSE}
+alpha_div %>%
+  pivot_longer(-sample, names_to = "metric", values_to = "value") %>%
+  left_join(., sample_metadata, by = join_by(sample == Tube_code)) %>%
+  filter(Population == "Cold_wet" & time_point %in% c("Acclimation", "Antibiotics") ) %>%
+  filter(metric=="richness") %>% 
+  summarize(shapiro_p_value = shapiro.test(value)$p.value) %>%
+  pull(shapiro_p_value) #0.001 -->wilcox test
+
+alpha_div %>%
+  pivot_longer(-sample, names_to = "metric", values_to = "value") %>%
+  left_join(., sample_metadata, by = join_by(sample == Tube_code)) %>%
+  filter(Population == "Cold_wet" & time_point %in% c("Acclimation", "Antibiotics") ) %>%
+  filter(metric=="neutral") %>% 
+  summarize(shapiro_p_value = shapiro.test(value)$p.value) %>%
+  pull(shapiro_p_value) #0.006-->wilcox test
+
+alpha_div %>%
+  pivot_longer(-sample, names_to = "metric", values_to = "value") %>%
+  left_join(., sample_metadata, by = join_by(sample == Tube_code)) %>%
+  filter(Population == "Cold_wet" & time_point %in% c("Acclimation", "Antibiotics") ) %>%
+  filter(metric=="phylogenetic") %>% 
+  summarize(shapiro_p_value = shapiro.test(value)$p.value) %>%
+  pull(shapiro_p_value) 
+```
+
 
 ### Alpha diversity
 ```{r alpha_div_plot_1, comment="", message=FALSE, warning=FALSE}
 alpha_div %>%
   pivot_longer(-sample, names_to = "metric", values_to = "value") %>%
   left_join(., sample_metadata, by = "sample") %>%
-  mutate(metric=factor(metric,levels=c("richness","neutral","phylogenetic", "functional"))) %>%
-  filter(Population == "Cold_wet" & time_point %in% c("1_Acclimation", "2_Antibiotics") ) %>% 
+  mutate(metric=factor(metric,levels=c("richness"))) %>%
+  filter(Population == "Cold_wet" & time_point %in% c("Acclimation", "Antibiotics") ) %>% 
+  ggplot(aes(y = value, x = time_point, color=time_point, fill=time_point)) +
+  geom_jitter(width = 0.2, show.legend = FALSE) +
+  geom_boxplot(width = 0.5, alpha=0.5, outlier.shape = NA, show.legend = FALSE) +
+  scale_color_manual(values=treatment_colors)+
+  scale_fill_manual(values=treatment_colors) +
+  stat_compare_means(method = "wilcox.test", show.legend = F, size = 3, label.x = c(1.5))+
+  theme_classic() +
+  theme(
+    strip.background = element_blank(),
+    panel.grid.minor.x = element_line(size = .1, color = "grey"),
+    axis.title.x = element_blank(),
+    axis.title.y = element_text(size=10),
+    axis.text.x = element_text(angle = 45, hjust = 1),
+    # Increase plot size
+    plot.title = element_text(size = 10),
+    axis.text = element_text(size = 8),
+    axis.title = element_text(size = 8)
+      ) +
+  ylab("Alpha diversity")
+```
+
+```{r alpha_div_plot_2_antib, comment="", message=FALSE, warning=FALSE}
+alpha_div %>%
+  pivot_longer(-sample, names_to = "metric", values_to = "value") %>%
+  left_join(., sample_metadata, by = "sample") %>%
+  mutate(metric=factor(metric,levels=c("neutral","phylogenetic"))) %>%
+  filter(metric!="richness") %>%
+  filter(Population == "Cold_wet" & time_point %in% c("Acclimation", "Antibiotics") ) %>% 
   ggplot(aes(y = value, x = time_point, color=time_point, fill=time_point)) +
   geom_jitter(width = 0.2, show.legend = FALSE) +
   geom_boxplot(width = 0.5, alpha=0.5, outlier.shape = NA, show.legend = FALSE) +
   scale_color_manual(values=treatment_colors)+
   scale_fill_manual(values=treatment_colors) +
   facet_wrap(. ~ metric, scales = "free") +
-  stat_compare_means(method = "wilcox.test", show.legend = F, size = 3, label.x = c(1.5))+
+  stat_compare_means(method = "t.test", show.legend = F, size = 3, label.x = c(1.5))+
   theme_classic() +
   theme(
     strip.background = element_blank(),
@@ -769,21 +834,14 @@ Model_phylo <- lme(fixed = phylogenetic ~ time_point, data = alpha_div_meta,
 summary(Model_phylo)
 ```
 
-***Functional***
-```{r LMM_func, comment="", message=FALSE, warning=FALSE}
-Model_funct <- lme(fixed = functional ~ time_point, data = alpha_div_meta,
-               random = ~ 1 | individual)
-summary(Model_funct)
-```
-
 ### Beta diversity
 ```{r filter_data1, comment="", message=FALSE, warning=FALSE}
 samples_to_keep <- sample_metadata %>%
-  filter(Population == "Cold_wet" & time_point %in% c("1_Acclimation", "2_Antibiotics")) %>% 
+  filter(Population == "Cold_wet" & time_point %in% c("Acclimation", "Antibiotics")) %>% 
   select(Tube_code) %>% 
   pull()
 subset_meta <- sample_metadata %>%
-  filter(Population == "Cold_wet" & time_point %in% c("1_Acclimation", "2_Antibiotics"))
+  filter(Population == "Cold_wet" & time_point %in% c("Acclimation", "Antibiotics"))
 ```
 
 ***Richness***
@@ -830,29 +888,15 @@ adonis2(phylo ~ time_point,
         tt()
 ```
 
-***Functional***
-```{r permanova_func, comment="", message=FALSE, warning=FALSE}
-func <- as.matrix(beta_q1f$S)
-func <- as.dist(func[rownames(func) %in% samples_to_keep,
-               colnames(func) %in% samples_to_keep])
-betadisper(func, subset_meta$time_point) %>% permutest(.) 
-adonis2(func ~ time_point,
-        data = subset_meta %>% arrange(match(Tube_code,labels(func))),
-        permutations = 999,
-        strata = subset_meta %>% arrange(match(Tube_code,labels(func))) %>% pull(individual)) %>%
-        broom::tidy() %>%
-        tt()
-```
-
 ### Structural zeros
 ```{r struct_zero, comment="", message=FALSE, warning=FALSE}
 acclimation_samples <- sample_metadata %>%
-  filter(Population == "Cold_wet" & time_point == "1_Acclimation") %>% 
+  filter(Population == "Cold_wet" & time_point == "Acclimation") %>% 
   dplyr::select(sample) %>%
   pull()
 
 antibiotics_samples <- sample_metadata %>%
-  filter(Population == "Cold_wet" & time_point == "2_Antibiotics") %>% 
+  filter(Population == "Cold_wet" & time_point == "Antibiotics") %>% 
   dplyr::select(sample) %>% pull()
 
 structural_zeros <- genome_counts_filt %>% 
@@ -934,7 +978,7 @@ element_gift %>%
 ### Differential abundance analysis: composition
 ```{r phylo_acclim_antib, comment="", message=FALSE, warning=FALSE}
 phylo_samples <- sample_metadata %>%
-  filter(Population == "Cold_wet" & time_point %in% c("1_Acclimation", "2_Antibiotics") )%>% 
+  filter(Population == "Cold_wet" & time_point %in% c("Acclimation", "Antibiotics") )%>% 
   column_to_rownames("sample") %>% 
   sample_data()
 phylo_genome <- genome_counts_filt %>% 
@@ -1247,19 +1291,49 @@ difference_table%>%
 
 ## Does antibiotic administration remove the differences found in the two populations?
 
+### Shapiro test
+
+```{r shapiro_antib_1, comment="", message=FALSE, warning=FALSE}
+alpha_div %>%
+  pivot_longer(-sample, names_to = "metric", values_to = "value") %>%
+  left_join(., sample_metadata, by = join_by(sample == Tube_code)) %>%
+  filter(time_point == "Antibiotics" ) %>%
+  filter(metric=="richness") %>% 
+  summarize(shapiro_p_value = shapiro.test(value)$p.value) %>%
+  pull(shapiro_p_value) #0.001-->wilcox test
+
+alpha_div %>%
+  pivot_longer(-sample, names_to = "metric", values_to = "value") %>%
+  left_join(., sample_metadata, by = join_by(sample == Tube_code)) %>%
+  filter(time_point == "Antibiotics" ) %>%
+  filter(metric=="neutral") %>% 
+  summarize(shapiro_p_value = shapiro.test(value)$p.value) %>%
+  pull(shapiro_p_value) #0.0003-->wilcox test
+
+alpha_div %>%
+  pivot_longer(-sample, names_to = "metric", values_to = "value") %>%
+  left_join(., sample_metadata, by = join_by(sample == Tube_code)) %>%
+  filter(time_point == "Antibiotics" ) %>%
+  filter(metric=="phylogenetic") %>% 
+  summarize(shapiro_p_value = shapiro.test(value)$p.value) %>%
+  pull(shapiro_p_value)
+```
+
+
 ### Alpha diversity
 ```{r filter_data01, comment="", message=FALSE, warning=FALSE}
 alpha_div_meta <- alpha_div %>%
   left_join(sample_metadata, by = join_by(sample == sample))%>%
-  filter(time_point == "2_Antibiotics" )
+  filter(time_point == "Antibiotics" )
 ```
 
 ```{r alpha_div_plot_2, comment="", message=FALSE, warning=FALSE}
 alpha_div %>%
   pivot_longer(-sample, names_to = "metric", values_to = "value") %>%
   left_join(., sample_metadata, by = "sample") %>%
-  mutate(metric=factor(metric,levels=c("richness","neutral","phylogenetic", "functional"))) %>%
-  filter(time_point == "2_Antibiotics" ) %>% 
+  mutate(metric=factor(metric,levels=c("richness","neutral"))) %>%
+  filter(metric!="phylogenetic") %>%
+  filter(time_point == "Antibiotics" ) %>% 
   ggplot(aes(y = value, x = Population, color=Population, fill=Population)) +
   geom_jitter(width = 0.2, show.legend = FALSE) +
   geom_boxplot(width = 0.5, alpha=0.5, outlier.shape = NA, show.legend = FALSE) +
@@ -1282,14 +1356,41 @@ alpha_div %>%
   ylab("Alpha diversity")
 ```
 
+```{r alpha_div_plot_antib, comment="", message=FALSE, warning=FALSE}
+alpha_div %>%
+  pivot_longer(-sample, names_to = "metric", values_to = "value") %>%
+  left_join(., sample_metadata, by = "sample") %>%
+  mutate(metric=factor(metric,levels=c("phylogenetic"))) %>%
+  filter(time_point == "Antibiotics" ) %>% 
+  ggplot(aes(y = value, x = Population, color=Population, fill=Population)) +
+  geom_jitter(width = 0.2, show.legend = FALSE) +
+  geom_boxplot(width = 0.5, alpha=0.5, outlier.shape = NA, show.legend = FALSE) +
+  scale_color_manual(values=treatment_colors)+
+  scale_fill_manual(values=treatment_colors) +
+  stat_compare_means(method = "t.test", show.legend = F, size = 3, label.x = c(1.5))+
+      theme_classic() +
+        theme(
+    strip.background = element_blank(),
+    panel.grid.minor.x = element_line(size = .1, color = "grey"),
+    axis.title.x = element_blank(),
+    axis.title.y = element_text(size=10),
+    axis.text.x = element_text(angle = 45, hjust = 1),
+    # Increase plot size
+    plot.title = element_text(size = 10),
+    axis.text = element_text(size = 8),
+    axis.title = element_text(size = 8)
+      ) +
+  ylab("Alpha diversity")
+```
+
 ### Beta diversity
 ```{r data_filter1, comment="", message=FALSE, warning=FALSE}
 samples_to_keep <- sample_metadata %>%
-  filter(time_point == "2_Antibiotics") %>% 
+  filter(time_point == "Antibiotics") %>% 
   select(Tube_code) %>% 
   pull()
 subset_meta <- sample_metadata %>%
-  filter(time_point == "2_Antibiotics")
+  filter(time_point == "Antibiotics")
 ```
 
 ***Richness***
@@ -1333,42 +1434,60 @@ adonis2(phylo ~ Population,
         tt()
 ```
 
-***Functional***
-```{r permanova_func1, comment="", message=FALSE, warning=FALSE}
-func <- as.matrix(beta_q1f$S)
-func <- as.dist(func[rownames(func) %in% samples_to_keep,
-               colnames(func) %in% samples_to_keep])
-betadisper(func, subset_meta$Population) %>% permutest(.) 
-adonis2(func ~ Population,
-        data = subset_meta %>% arrange(match(Tube_code,labels(func))),
-        permutations = 999) %>%
-        broom::tidy() %>%
-        tt()
+## Are the microbial communities similar in both donor samples?
+
+### Shapiro test
+
+```{r shapiro_donor_1, comment="", message=FALSE, warning=FALSE}
+alpha_div %>%
+  pivot_longer(-sample, names_to = "metric", values_to = "value") %>%
+  left_join(., sample_metadata, by = join_by(sample == Tube_code)) %>%
+  filter(type =="Hot_control" & time_point %in% c( "Transplant1", "Transplant2"))%>%
+  filter(metric=="richness") %>% 
+  summarize(shapiro_p_value = shapiro.test(value)$p.value) %>%
+  pull(shapiro_p_value)
+
+alpha_div %>%
+  pivot_longer(-sample, names_to = "metric", values_to = "value") %>%
+  left_join(., sample_metadata, by = join_by(sample == Tube_code)) %>%
+  filter(type =="Hot_control" & time_point %in% c( "Transplant1", "Transplant2"))%>%
+  filter(metric=="neutral") %>% 
+  summarize(shapiro_p_value = shapiro.test(value)$p.value) %>%
+  pull(shapiro_p_value)
+
+alpha_div %>%
+  pivot_longer(-sample, names_to = "metric", values_to = "value") %>%
+  left_join(., sample_metadata, by = join_by(sample == Tube_code)) %>%
+  filter(type =="Hot_control" & time_point %in% c( "Transplant1", "Transplant2"))%>%
+  filter(metric=="phylogenetic") %>% 
+  summarize(shapiro_p_value = shapiro.test(value)$p.value) %>%
+  pull(shapiro_p_value)
 ```
 
-## Are the microbial communities similar in both donor samples?
+### Alpha diversity
+
 ```{r filter_Data2, comment="", message=FALSE, warning=FALSE}
 samples_to_keep <- sample_metadata %>%
-  filter(type =="Hot_control" & time_point %in% c( "3_Transplant1", "4_Transplant2"))%>% 
+  filter(type =="Hot_control" & time_point %in% c( "Transplant1", "Transplant2"))%>% 
   select(sample) %>% 
   pull()
 subset_meta <- sample_metadata %>%
-  filter(type =="Hot_control" & time_point %in% c( "3_Transplant1", "4_Transplant2"))
+  filter(type =="Hot_control" & time_point %in% c( "Transplant1", "Transplant2"))
 ```
 
 ```{r alpha_div_plot_02, comment="", message=FALSE, warning=FALSE}
 alpha_div %>%
   pivot_longer(-sample, names_to = "metric", values_to = "value") %>%
   left_join(., sample_metadata, by = "sample") %>%
-  mutate(metric=factor(metric,levels=c("richness","neutral","phylogenetic", "functional"))) %>%
-  filter(type =="Hot_control" & time_point %in% c( "3_Transplant1", "4_Transplant2")) %>% 
+  mutate(metric=factor(metric,levels=c("richness","neutral","phylogenetic"))) %>%
+  filter(type =="Hot_control" & time_point %in% c( "Transplant1", "Transplant2")) %>% 
   ggplot(aes(y = value, x = time_point, color=time_point, fill=time_point)) +
   geom_jitter(width = 0.2, show.legend = FALSE) +
   geom_boxplot(width = 0.5, alpha=0.5, outlier.shape = NA, show.legend = FALSE) +
   scale_color_manual(values=treatment_colors)+
   scale_fill_manual(values=treatment_colors) +
   facet_wrap(. ~ metric, scales = "free") +
-  stat_compare_means(method = "wilcox.test", show.legend = F, size = 3, label.x = c(1.5))+
+  stat_compare_means(method = "t.test", show.legend = F, size = 3, label.x = c(1.5))+
   theme_classic() +
   theme(
     strip.background = element_blank(),
@@ -1425,21 +1544,8 @@ adonis2(phylo ~ time_point,
         tt()
 ```
 
-***Functional***
-```{r permanova_func2, comment="", message=FALSE, warning=FALSE}
-func <- as.matrix(beta_q1f$S)
-func <- as.dist(func[rownames(func) %in% samples_to_keep,
-               colnames(func) %in% samples_to_keep])
-betadisper(func, subset_meta$time_point) %>% permutest(.) 
-adonis2(func ~ time_point,
-        data = subset_meta %>% arrange(match(Tube_code,labels(func))),
-        permutations = 999) %>%
-        broom::tidy() %>%
-        tt()
-```
-
 ## Does the donor sample maintain the microbial community found in acclimation?
-### Alpha diversity
+
 ```{r filter_data3, comment="", message=FALSE, warning=FALSE}
 sample_metadata <- sample_metadata %>%
     mutate(treatment=case_when(
@@ -1453,11 +1559,42 @@ samples_to_keep <- sample_metadata %>%
 subset_meta <- sample_metadata %>%
   filter(type == "Hot_control" & treatment %in% c("Acclimation","Transplant"))
 ```
+
+
+### Shapiro test
+```{r shapiro_donor_2, comment="", message=FALSE, warning=FALSE}
+alpha_div %>%
+  pivot_longer(-sample, names_to = "metric", values_to = "value") %>%
+  left_join(., sample_metadata, by = join_by(sample == Tube_code)) %>%
+  filter(type == "Hot_control" & treatment %in% c("Acclimation","Transplant"))%>%
+  filter(metric=="richness") %>% 
+  summarize(shapiro_p_value = shapiro.test(value)$p.value) %>%
+  pull(shapiro_p_value)
+
+alpha_div %>%
+  pivot_longer(-sample, names_to = "metric", values_to = "value") %>%
+  left_join(., sample_metadata, by = join_by(sample == Tube_code)) %>%
+  filter(type == "Hot_control" & treatment %in% c("Acclimation","Transplant"))%>%
+  filter(metric=="neutral") %>% 
+  summarize(shapiro_p_value = shapiro.test(value)$p.value) %>%
+  pull(shapiro_p_value)
+
+alpha_div %>%
+  pivot_longer(-sample, names_to = "metric", values_to = "value") %>%
+  left_join(., sample_metadata, by = join_by(sample == Tube_code)) %>%
+  filter(type == "Hot_control" & treatment %in% c("Acclimation","Transplant"))%>%
+  filter(metric=="phylogenetic") %>% 
+  summarize(shapiro_p_value = shapiro.test(value)$p.value) %>%
+  pull(shapiro_p_value)
+```
+
+### Alpha diversity
+
 ```{r alpha_div_plot_002, comment="", message=FALSE, warning=FALSE}
 alpha_div %>%
   pivot_longer(-sample, names_to = "metric", values_to = "value") %>%
   left_join(., sample_metadata, by = "sample") %>%
-  mutate(metric=factor(metric,levels=c("richness","neutral","phylogenetic", "functional"))) %>%
+  mutate(metric=factor(metric,levels=c("richness","neutral","phylogenetic"))) %>%
   filter(type == "Hot_control" & treatment %in% c("Acclimation","Transplant")) %>% 
   ggplot(aes(y = value, x = treatment, color=treatment, fill=treatment)) +
   geom_jitter(width = 0.2, show.legend = FALSE) +
@@ -1465,7 +1602,7 @@ alpha_div %>%
   scale_color_manual(values=treatment_colors)+
   scale_fill_manual(values=treatment_colors) +
   facet_wrap(. ~ metric, scales = "free") +
-  stat_compare_means(method = "wilcox.test", show.legend = F, size = 3, label.x = c(1.5))+
+  stat_compare_means(method = "t.test", show.legend = F, size = 3, label.x = c(1.5))+
   theme_classic() +
   theme(
     strip.background = element_blank(),
@@ -1573,45 +1710,9 @@ phylo %>%
     )
 ```
 
-***Functional***
-```{r permanova_func3, comment="", message=FALSE, warning=FALSE}
-func <- as.matrix(beta_q1f$S)
-func <- as.dist(func[rownames(func) %in% samples_to_keep,
-               colnames(func) %in% samples_to_keep])
-betadisper(func, subset_meta$treatment) %>% permutest(.) 
-adonis2(func ~ treatment,
-        data = subset_meta %>% arrange(match(sample,labels(func))),
-        permutations = 999) %>%
-        broom::tidy() %>%
-        tt()
-```
-```{r beta_div_nmds_func_plot, comment="", message=FALSE, warning=FALSE}
-func %>%
-  vegan::metaMDS(., trymax = 500, k = 2, trace=0) %>%
-  vegan::scores() %>%
-  as_tibble(., rownames = "sample") %>%
-  dplyr::left_join(subset_meta, by = join_by(sample == sample)) %>%
-  group_by(treatment) %>%
-  mutate(x_cen = mean(NMDS1, na.rm = TRUE)) %>%
-  mutate(y_cen = mean(NMDS2, na.rm = TRUE)) %>%
-  ungroup() %>%
-  ggplot(aes(x = NMDS1, y = NMDS2, color = treatment)) +
-  geom_point(size = 4) +
-  scale_color_manual(values = treatment_colors,labels=c("Cold_wet" = "Cold wet", "Hot_dry" = "Hot dry")) +
-  geom_segment(aes(x = x_cen, y = y_cen, xend = NMDS1, yend = NMDS2), alpha = 0.9, show.legend = FALSE) +
-  theme(
-    axis.title = element_text(size = 12, face = "bold"),
-    axis.text = element_text(size = 10),
-    panel.background = element_blank(),
-    axis.line = element_line(size = 0.5, linetype = "solid", colour = "black"),
-    legend.text = element_text(size = 10),
-    legend.title = element_text(size = 12),
-    legend.position = "right", legend.box = "vertical"
-    )
-```
 
 ## Is the donor sample microbiota different to recipient microbiota?
-### Alpha diversity
+
 ```{r filter_data4, comment="", message=FALSE, warning=FALSE}
 samples_to_keep <- sample_metadata %>%
   filter(type == "Treatment" & treatment %in% c("Acclimation", "Transplant")) %>% 
@@ -1621,11 +1722,41 @@ subset_meta <- sample_metadata %>%
   filter(type == "Treatment" & treatment %in% c("Acclimation", "Transplant"))
 ```
 
+### Shapiro test
+
+```{r shapiro_donor_3, comment="", message=FALSE, warning=FALSE}
+alpha_div %>%
+  pivot_longer(-sample, names_to = "metric", values_to = "value") %>%
+  left_join(., sample_metadata, by = join_by(sample == Tube_code)) %>%
+  filter(type == "Treatment" & time_point %in% c("Acclimation", "Transplant"))%>%
+  filter(metric=="richness") %>% 
+  summarize(shapiro_p_value = shapiro.test(value)$p.value) %>%
+  pull(shapiro_p_value)
+
+alpha_div %>%
+  pivot_longer(-sample, names_to = "metric", values_to = "value") %>%
+  left_join(., sample_metadata, by = join_by(sample == Tube_code)) %>%
+  filter(type == "Treatment" & time_point %in% c("Acclimation", "Transplant"))%>%
+  filter(metric=="neutral") %>% 
+  summarize(shapiro_p_value = shapiro.test(value)$p.value) %>%
+  pull(shapiro_p_value)
+
+alpha_div %>%
+  pivot_longer(-sample, names_to = "metric", values_to = "value") %>%
+  left_join(., sample_metadata, by = join_by(sample == Tube_code)) %>%
+  filter(type == "Treatment" & time_point %in% c("Acclimation", "Transplant"))%>%
+  filter(metric=="phylogenetic") %>% 
+  summarize(shapiro_p_value = shapiro.test(value)$p.value) %>%
+  pull(shapiro_p_value)
+```
+
+### Alpha diversity
+
 ```{r alpha_div_plot_03, comment="", message=FALSE, warning=FALSE}
 alpha_div %>%
   pivot_longer(-sample, names_to = "metric", values_to = "value") %>%
   left_join(., sample_metadata, by = "sample") %>%
-  mutate(metric=factor(metric,levels=c("richness","neutral","phylogenetic", "functional"))) %>%
+  mutate(metric=factor(metric,levels=c("richness","neutral","phylogenetic"))) %>%
   filter(type == "Treatment" & treatment %in% c("Acclimation", "Transplant")) %>% 
   ggplot(aes(y = value, x = treatment, color=treatment, fill=treatment)) +
   geom_jitter(width = 0.2, show.legend = FALSE) +
@@ -1633,7 +1764,7 @@ alpha_div %>%
   scale_color_manual(values=treatment_colors)+
   scale_fill_manual(values=treatment_colors) +
   facet_wrap(. ~ metric, scales = "free") +
-  stat_compare_means(method = "wilcox.test", show.legend = F, size = 3, label.x = c(1.5))+
+  stat_compare_means(method = "t.test", show.legend = F, size = 3, label.x = c(1.5))+
   theme_classic() +
   theme(
     strip.background = element_blank(),
@@ -1691,35 +1822,51 @@ adonis2(phylo ~ treatment,
         tt()
 ```
 
-***Functional***
-```{r permanova_func4, comment="", message=FALSE, warning=FALSE}
-func <- as.matrix(beta_q1f$S)
-func <- as.dist(func[rownames(func) %in% samples_to_keep,
-               colnames(func) %in% samples_to_keep])
-betadisper(func, subset_meta$treatment) %>% permutest(.) 
-adonis2(func ~ treatment,
-        data = subset_meta %>% arrange(match(Tube_code,labels(func))),
-        permutations = 999) %>%
-        broom::tidy() %>%
-        tt()
-```
-
 ## Does FMT change the microbial community over time?
-
-### Alpha diversity
 
 ```{r filter_data5, comment="", message=FALSE, warning=FALSE}
 alpha_div_meta <- alpha_div %>%
   left_join(sample_metadata, by = join_by(sample == sample))%>%
-  filter(type == "Treatment" & treatment %in% c("Post-FMT1","Post-FMT2") ) 
+  filter(type == "Treatment" & treatment %in% c("FMT1","FMT2") ) 
 ```
+
+### Shapiro test
+
+```{r shapiro_fmt, comment="", message=FALSE, warning=FALSE}
+alpha_div %>%
+  pivot_longer(-sample, names_to = "metric", values_to = "value") %>%
+  left_join(., sample_metadata, by = join_by(sample == Tube_code)) %>%
+  filter(type=="Treatment" & time_point %in% c("FMT1", "FMT2"))%>%
+  filter(metric=="richness") %>% 
+  summarize(shapiro_p_value = shapiro.test(value)$p.value) %>%
+  pull(shapiro_p_value)
+ 
+alpha_div %>%
+  pivot_longer(-sample, names_to = "metric", values_to = "value") %>%
+  left_join(., sample_metadata, by = join_by(sample == Tube_code)) %>%
+  filter(type=="Treatment" & time_point %in% c("FMT1", "FMT2"))%>%
+  filter(metric=="neutral") %>% 
+  summarize(shapiro_p_value = shapiro.test(value)$p.value) %>%
+  pull(shapiro_p_value)
+
+alpha_div %>%
+  pivot_longer(-sample, names_to = "metric", values_to = "value") %>%
+  left_join(., sample_metadata, by = join_by(sample == Tube_code)) %>%
+  filter(type=="Treatment" & time_point %in% c("FMT1", "FMT2"))%>%
+  filter(metric=="phylogenetic") %>% 
+  summarize(shapiro_p_value = shapiro.test(value)$p.value) %>%
+  pull(shapiro_p_value)
+```
+
+### Alpha diversity
 
 ```{r alpha_div_plot_5, comment="", message=FALSE, warning=FALSE}
 alpha_div %>%
   pivot_longer(-sample, names_to = "metric", values_to = "value") %>%
   left_join(., sample_metadata, by = "sample") %>%
-  mutate(metric=factor(metric,levels=c("richness","neutral","phylogenetic", "functional"))) %>%
-  filter(type=="Treatment" & treatment %in% c("Post-FMT1", "Post-FMT2" )) %>% 
+  mutate(metric=factor(metric,levels=c("richness","neutral"))) %>%
+  filter(metric!="phylogenetic") %>%
+  filter(type=="Treatment" & treatment %in% c("FMT1", "FMT2" )) %>% 
   ggplot(aes(y = value, x = treatment, color=treatment, fill=treatment)) +
   geom_jitter(width = 0.2, show.legend = FALSE) +
   geom_boxplot(width = 0.5, alpha=0.5, outlier.shape = NA, show.legend = FALSE) +
@@ -1727,6 +1874,33 @@ alpha_div %>%
   scale_fill_manual(values=treatment_colors) +
   facet_wrap(. ~ metric, scales = "free") +
       theme_classic() +
+    stat_compare_means(method = "t.test", show.legend = F, size = 3, label.x = c(1.5))+
+        theme(
+    strip.background = element_blank(),
+    panel.grid.minor.x = element_line(size = .1, color = "grey"),
+    axis.title.x = element_blank(),
+    axis.title.y = element_text(size=10),
+    axis.text.x = element_text(angle = 45, hjust = 1),
+    plot.title = element_text(size = 10),
+    axis.text = element_text(size = 8),
+    axis.title = element_text(size = 8)
+      ) +
+  ylab("Alpha diversity")
+```
+
+```{r alpha_div_plot_fmt_1, comment="", message=FALSE, warning=FALSE}
+alpha_div %>%
+  pivot_longer(-sample, names_to = "metric", values_to = "value") %>%
+  left_join(., sample_metadata, by = "sample") %>%
+  mutate(metric=factor(metric,levels=c("phylogenetic"))) %>%
+  filter(type=="Treatment" & treatment %in% c("FMT1", "FMT2")) %>% 
+  ggplot(aes(y = value, x = treatment, color=treatment, fill=treatment)) +
+  geom_jitter(width = 0.2, show.legend = FALSE) +
+  geom_boxplot(width = 0.5, alpha=0.5, outlier.shape = NA, show.legend = FALSE) +
+  scale_color_manual(values=treatment_colors)+
+  scale_fill_manual(values=treatment_colors) +
+  theme_classic() +
+  stat_compare_means(method = "wilcox.test", show.legend = F, size = 3, label.x = c(1.5))+
         theme(
     strip.background = element_blank(),
     panel.grid.minor.x = element_line(size = .1, color = "grey"),
@@ -1760,22 +1934,15 @@ Model_phylo <- lme(fixed = phylogenetic ~ treatment, data = alpha_div_meta,
 summary(Model_phylo)
 ```
 
-***Functional***
-```{r LMM_func5, comment="", message=FALSE, warning=FALSE}
-Model_funct <- lme(fixed = functional ~ treatment, data = alpha_div_meta,
-               random = ~ 1 | individual)
-summary(Model_funct)
-```
-
 ### Beta diversity
 
 ```{r filter_data_beta5, comment="", message=FALSE, warning=FALSE}
 samples_to_keep <- sample_metadata %>%
-  filter(type == "Treatment" & treatment %in% c("Post-FMT1", "Post-FMT2")) %>% 
+  filter(type == "Treatment" & treatment %in% c("FMT1", "FMT2")) %>% 
   select(sample) %>% 
   pull()
 subset_meta <- sample_metadata %>%
-  filter(type == "Treatment" & treatment %in% c("Post-FMT1", "Post-FMT2"))
+  filter(type == "Treatment" & treatment %in% c("FMT1", "FMT2"))
 ```
 
 ***Richness***
@@ -1825,43 +1992,85 @@ adonis2(phylo ~ treatment,
 ```
 
 
-***Functional***
-```{r permanova_func5, comment="", message=FALSE, warning=FALSE}
-func <- as.matrix(beta_q1f$S)
-func <- as.dist(func[rownames(func) %in% samples_to_keep,
-               colnames(func) %in% samples_to_keep])
-betadisper(func, subset_meta$treatment) %>% permutest(.) 
-adonis2(func ~ treatment,
-        data = subset_meta %>% arrange(match(sample,labels(func))),
-        permutations = 999,
-        strata = subset_meta %>% arrange(match(sample,labels(func))) %>% pull(individual)) %>%
-        broom::tidy() %>%
-        tt()
-```
-
-
 ## Do FMT change the microbial community compared to antibiotics and acclimation?
 
-### Alpha diversity
 
 ```{r filter_data6, comment="", message=FALSE, warning=FALSE}
 alpha_div_meta <- alpha_div %>%
   left_join(sample_metadata, by = join_by(sample == sample))%>%
-  filter(type == "Treatment" & treatment %in% c("Antibiotics", "Acclimation","Post-FMT1") ) 
+  filter(type == "Treatment" & treatment %in% c("Antibiotics", "Acclimation","FMT1") ) 
 ```
+
+### Shapiro test
+
+```{r shapiro_fmt_1, comment="", message=FALSE, warning=FALSE}
+alpha_div %>%
+  pivot_longer(-sample, names_to = "metric", values_to = "value") %>%
+  left_join(., sample_metadata, by = join_by(sample == Tube_code)) %>%
+  filter(type=="Treatment" & time_point %in% c( "Antibiotics","Acclimation", "FMT1"))%>%
+  filter(metric=="richness") %>% 
+  summarize(shapiro_p_value = shapiro.test(value)$p.value) %>%
+  pull(shapiro_p_value) #0.07
+
+alpha_div %>%
+  pivot_longer(-sample, names_to = "metric", values_to = "value") %>%
+  left_join(., sample_metadata, by = join_by(sample == Tube_code)) %>%
+  filter(type=="Treatment" & time_point %in% c( "Antibiotics","Acclimation", "FMT1"))%>%
+  filter(metric=="neutral") %>% 
+  summarize(shapiro_p_value = shapiro.test(value)$p.value) %>%
+  pull(shapiro_p_value)#0.01 -->wilcox test
+
+alpha_div %>%
+  pivot_longer(-sample, names_to = "metric", values_to = "value") %>%
+  left_join(., sample_metadata, by = join_by(sample == Tube_code)) %>%
+  filter(type=="Treatment" & time_point %in% c( "Antibiotics","Acclimation", "FMT1"))%>%
+  filter(metric=="phylogenetic") %>% 
+  summarize(shapiro_p_value = shapiro.test(value)$p.value) %>%
+  pull(shapiro_p_value) #0.2
+```
+
+### Alpha diversity
 
 ```{r alpha_div_plot_6, comment="", message=FALSE, warning=FALSE}
 alpha_div %>%
   pivot_longer(-sample, names_to = "metric", values_to = "value") %>%
   left_join(., sample_metadata, by = "sample") %>%
-  mutate(metric=factor(metric,levels=c("richness","neutral","phylogenetic", "functional"))) %>%
-  filter(type=="Treatment" & treatment %in% c( "Antibiotics","Acclimation", "Post-FMT1")) %>% 
+  mutate(metric=factor(metric,levels=c("richness","phylogenetic"))) %>%
+  filter(metric!="neutral")%>%
+  filter(type=="Treatment" & treatment %in% c( "Antibiotics","Acclimation", "FMT1")) %>% 
   ggplot(aes(y = value, x = treatment, color=treatment, fill=treatment)) +
   geom_jitter(width = 0.2, show.legend = FALSE) +
   geom_boxplot(width = 0.5, alpha=0.5, outlier.shape = NA, show.legend = FALSE) +
 #  scale_color_manual(values=treatment_colors)+
 #  scale_fill_manual(values=treatment_colors) +
   facet_wrap(. ~ metric, scales = "free") +
+  stat_compare_means(method = "t.test", show.legend = F, size = 3, label.x = c(1.5))+
+      theme_classic() +
+        theme(
+    strip.background = element_blank(),
+    panel.grid.minor.x = element_line(size = .1, color = "grey"),
+    axis.title.x = element_blank(),
+    axis.title.y = element_text(size=10),
+    axis.text.x = element_text(angle = 45, hjust = 1),
+    plot.title = element_text(size = 10),
+    axis.text = element_text(size = 8),
+    axis.title = element_text(size = 8)
+      ) +
+  ylab("Alpha diversity")
+```
+
+```{r alpha_div_plot_6_1, comment="", message=FALSE, warning=FALSE}
+alpha_div %>%
+  pivot_longer(-sample, names_to = "metric", values_to = "value") %>%
+  left_join(., sample_metadata, by = "sample") %>%
+  mutate(metric=factor(metric,levels=c("neutral"))) %>%
+  filter(type=="Treatment" & treatment %in% c( "Antibiotics","Acclimation", "FMT1")) %>% 
+  ggplot(aes(y = value, x = treatment, color=treatment, fill=treatment)) +
+  geom_jitter(width = 0.2, show.legend = FALSE) +
+  geom_boxplot(width = 0.5, alpha=0.5, outlier.shape = NA, show.legend = FALSE) +
+#  scale_color_manual(values=treatment_colors)+
+#  scale_fill_manual(values=treatment_colors) +
+  stat_compare_means(method = "wilcox.test", show.legend = F, size = 3, label.x = c(1.5))+
       theme_classic() +
         theme(
     strip.background = element_blank(),
@@ -1897,14 +2106,6 @@ Model_phylo <- lme(fixed = phylogenetic ~ treatment, data = alpha_div_meta,
                random = ~ 1 | individual)
 #summary(Model_phylo)
 emmeans(Model_phylo, pairwise ~ treatment)
-```
-
-***Functional***
-```{r LMM_func6, comment="", message=FALSE, warning=FALSE}
-Model_funct <- lme(fixed = functional ~ treatment, data = alpha_div_meta,
-               random = ~ 1 | individual)
-#summary(Model_funct)
-emmeans(Model_funct, pairwise ~ treatment)
 ```
 
 ### Beta diversity
@@ -1971,30 +2172,12 @@ adonis2(phylo ~ treatment,
 pairwise.adonis(phylo, subset_meta$treatment, perm = 999)
 ```
 
-***Functional***
-```{r permanova_func6, comment="", message=FALSE, warning=FALSE}
-func <- as.matrix(beta_q1f$S)
-func <- as.dist(func[rownames(func) %in% samples_to_keep,
-               colnames(func) %in% samples_to_keep])
-betadisper(func, subset_meta$treatment) %>% permutest(.) 
-adonis2(func ~ treatment,
-        data = subset_meta %>% arrange(match(sample,labels(func))),
-        permutations = 999,
-        strata = subset_meta %>% arrange(match(sample,labels(func))) %>% pull(individual)) %>%
-        broom::tidy() %>%
-        tt()
-```
-```{r pairwise_func6, comment="", message=FALSE, warning=FALSE}
-pairwise.adonis(func, subset_meta$treatment, perm = 999)
-```
-
 ## Is the gut microbiota similar to the donor after FMT?
 
-### Beta diversity
 ```{r filter_Data7, comment="", message=FALSE, warning=FALSE}
 sample_metadata <- sample_metadata %>%
     mutate(treatment=case_when(
-    treatment %in% c("Post-FMT1", "Post-FMT2") ~ "FMT",
+    treatment %in% c("FMT1", "FMT2") ~ "FMT",
     TRUE ~ treatment
   ))
 
@@ -2006,6 +2189,65 @@ samples_to_keep <- sample_metadata %>%
 subset_meta <- sample_metadata %>%
   filter(type == "Treatment" & treatment %in% c("FMT", "Transplant"))
 ```
+
+### Shapiro test
+
+```{r shapiro_fmt_2, comment="", message=FALSE, warning=FALSE}
+alpha_div %>%
+  pivot_longer(-sample, names_to = "metric", values_to = "value") %>%
+  left_join(., sample_metadata, by = join_by(sample == Tube_code)) %>%
+  filter(type=="Treatment" & treatment %in% c( "Transplant","FMT"))%>%
+  filter(metric=="richness") %>% 
+  summarize(shapiro_p_value = shapiro.test(value)$p.value) %>%
+  pull(shapiro_p_value)
+
+alpha_div %>%
+  pivot_longer(-sample, names_to = "metric", values_to = "value") %>%
+  left_join(., sample_metadata, by = join_by(sample == Tube_code)) %>%
+  filter(type=="Treatment" & treatment %in% c( "Transplant","FMT"))%>%
+  filter(metric=="neutral") %>% 
+  summarize(shapiro_p_value = shapiro.test(value)$p.value) %>%
+  pull(shapiro_p_value)
+
+alpha_div %>%
+  pivot_longer(-sample, names_to = "metric", values_to = "value") %>%
+  left_join(., sample_metadata, by = join_by(sample == Tube_code)) %>%
+  filter(type=="Treatment" & treatment %in% c( "Transplant","FMT"))%>%
+  filter(metric=="phylogenetic") %>% 
+  summarize(shapiro_p_value = shapiro.test(value)$p.value) %>%
+  pull(shapiro_p_value)
+```
+
+### Alpha diversity
+
+```{r alpha_div_plot_7, comment="", message=FALSE, warning=FALSE}
+alpha_div %>%
+  pivot_longer(-sample, names_to = "metric", values_to = "value") %>%
+  left_join(., sample_metadata, by = "sample") %>%
+  mutate(metric=factor(metric,levels=c("neutral","richness","phylogenetic"))) %>%
+  filter(type=="Treatment" & treatment %in% c( "Transplant", "FMT")) %>% 
+  ggplot(aes(y = value, x = treatment, color=treatment, fill=treatment)) +
+  geom_jitter(width = 0.2, show.legend = FALSE) +
+  geom_boxplot(width = 0.5, alpha=0.5, outlier.shape = NA, show.legend = FALSE) +
+#  scale_color_manual(values=treatment_colors)+
+#  scale_fill_manual(values=treatment_colors) +
+  facet_wrap(. ~ metric, scales = "free") +
+  stat_compare_means(method = "t.test", show.legend = F, size = 3, label.x = c(1.5))+
+      theme_classic() +
+        theme(
+    strip.background = element_blank(),
+    panel.grid.minor.x = element_line(size = .1, color = "grey"),
+    axis.title.x = element_blank(),
+    axis.title.y = element_text(size=10),
+    axis.text.x = element_text(angle = 45, hjust = 1),
+    plot.title = element_text(size = 10),
+    axis.text = element_text(size = 8),
+    axis.title = element_text(size = 8)
+      ) +
+  ylab("Alpha diversity")
+```
+
+### Beta diversity
 
 ***Richness***
 ```{r permanova_rich7, comment="", message=FALSE, warning=FALSE}
@@ -2076,22 +2318,6 @@ adonis2(phylo ~ treatment,
         broom::tidy() %>%
         tt()
 ```
-
-
-***Functional***
-```{r permanova_func7, comment="", message=FALSE, warning=FALSE}
-func <- as.matrix(beta_q1f$S)
-func <- as.dist(func[rownames(func) %in% samples_to_keep,
-               colnames(func) %in% samples_to_keep])
-betadisper(func, subset_meta$treatment) %>% permutest(.) 
-adonis2(func ~ treatment,
-        data = subset_meta %>% arrange(match(sample,labels(func))),
-        permutations = 999,
-        strata = subset_meta %>% arrange(match(sample,labels(func))) %>% pull(individual)) %>%
-        broom::tidy() %>%
-        tt()
-```
-
 
 ### Structural zeros
 
@@ -2284,7 +2510,7 @@ difference_table %>%
 ```{r phyloseq_fmt_tranp, comment="", message=FALSE, warning=FALSE}
 phylo_samples <- sample_metadata %>%
     mutate(treatment=case_when(
-    treatment %in% c("Post-FMT1", "Post-FMT2") ~ "FMT",
+    treatment %in% c("FMT1", "FMT2") ~ "FMT",
     TRUE ~ treatment
   ))%>%
   filter(type == "Treatment" & treatment %in% c("FMT", "Transplant")) %>% 
