@@ -88,5 +88,4 @@ library(lme4)
 library(nlme)
 library(hilldiv2)
 library(emmeans)
-library(Maaslin2)
 ```
