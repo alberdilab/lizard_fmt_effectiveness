@@ -171,6 +171,7 @@ alpha_div %>%
   geom_boxplot(width = 0.5, alpha=0.5, outlier.shape = NA, show.legend = FALSE) +
   scale_color_manual(values=treatment_colors)+
   scale_fill_manual(values=treatment_colors) +
+  facet_wrap(. ~ metric, scales = "free") +
   theme_classic() +
   theme(
     strip.background = element_blank(),
@@ -682,6 +683,7 @@ alpha_div %>%
   geom_boxplot(width = 0.5, alpha=0.5, outlier.shape = NA, show.legend = FALSE) +
   scale_color_manual(values=treatment_colors)+
   scale_fill_manual(values=treatment_colors) +
+  facet_wrap(. ~ metric, scales = "free") +
   theme_classic() +
   theme(
     strip.background = element_blank(),
