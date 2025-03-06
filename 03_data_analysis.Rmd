@@ -1530,6 +1530,31 @@ adonis2(richness ~ treatment,
         tt()
 ```
 
+```{r beta_div_nmds_richness_plot, comment="", message=FALSE, warning=FALSE}
+richness %>%
+  vegan::metaMDS(., trymax = 500, k = 2, trace=0) %>%
+  vegan::scores() %>%
+  as_tibble(., rownames = "sample") %>%
+  dplyr::left_join(subset_meta, by = join_by(sample == sample)) %>%
+  group_by(treatment) %>%
+  mutate(x_cen = mean(NMDS1, na.rm = TRUE)) %>%
+  mutate(y_cen = mean(NMDS2, na.rm = TRUE)) %>%
+  ungroup() %>%
+  ggplot(aes(x = NMDS1, y = NMDS2, color = treatment)) +
+  geom_point(size = 4) +
+ # scale_color_manual(values = treatment_colors,labels=c("Cold_wet" = "Cold wet", "Hot_dry" = "Hot dry")) +
+  geom_segment(aes(x = x_cen, y = y_cen, xend = NMDS1, yend = NMDS2), alpha = 0.9, show.legend = FALSE) +
+  theme(
+    axis.title = element_text(size = 12, face = "bold"),
+    axis.text = element_text(size = 10),
+    panel.background = element_blank(),
+    axis.line = element_line(size = 0.5, linetype = "solid", colour = "black"),
+    legend.text = element_text(size = 10),
+    legend.title = element_text(size = 12),
+    legend.position = "right", legend.box = "vertical"
+    )
+```
+
 ***Neutral***
 ```{r permanova_neutral3, comment="", message=FALSE, warning=FALSE}
 neutral <- as.matrix(beta_q1n$S)
@@ -1664,23 +1689,25 @@ alpha_div %>%
 
 ***Richness***
 ```{r LMM_fmt1, comment="", message=FALSE, warning=FALSE}
-Modelq0GLMMNB <- glmer.nb(richness ~ time_point+(1|individual), data = alpha_div_meta)
+Modelq0GLMMNB <- glmer.nb(richness ~ treatment+(1|individual), data = alpha_div_meta)
 summary(Modelq0GLMMNB)
-emmeans::emmeans(Modelq0GLMMNB, pairwise ~ time_point)
+emmeans::emmeans(Modelq0GLMMNB, pairwise ~ treatment)
 ```
 
 ***Neutral***
 ```{r LMM_neutral_fmt1, comment="", message=FALSE, warning=FALSE}
-Model_neutral <- lme(fixed = neutral ~ time_point, data = alpha_div_meta,
+Model_neutral <- lme(fixed = neutral ~ treatment, data = alpha_div_meta,
                random = ~ 1 | individual)
 summary(Model_neutral)
+emmeans::emmeans(Model_neutral, pairwise ~ treatment)
 ```
 
 ***Phylogenetic***
 ```{r LMM_phylol_fmt1, comment="", message=FALSE, warning=FALSE}
-Model_phylo <- lme(fixed = phylogenetic ~ time_point, data = alpha_div_meta,
+Model_phylo <- lme(fixed = phylogenetic ~ treatment, data = alpha_div_meta,
                random = ~ 1 | individual)
 summary(Model_phylo)
+emmeans::emmeans(Model_phylo, pairwise ~ treatment)
 ```
 
 ### Beta diversity
