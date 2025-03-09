@@ -9,7 +9,6 @@ Load the original data files outputted by the bioinformatic pipeline.
 ```{r load_sample_metadata, warning=FALSE, comments="", message=FALSE, eval=FALSE}
 sample_metadata <- read_tsv("data/metadata.tsv")%>%
   mutate(time_point = sub("^\\d+_", "", time_point)) %>% 
-  filter(!(time_point == "Wild" & Population == "Hot_dry")) %>% 
   filter(!(time_point == "Transplant1" & type == "Control")) %>% 
   filter(!(time_point == "Transplant2" & type == "Control")) %>% 
   filter(!(time_point == "Post-FMT1" & type == "Control")) %>% 
@@ -381,7 +380,7 @@ save(sample_metadata,
      genome_tree,
      phylum_colors,
      data_stats,
-     file = "data/03032025data.Rdata")
+     file = "data/08032025data.Rdata")
 ```
 ```{r wrap_working_objects_2, warning=FALSE, comments="", message=FALSE, eval=FALSE}
 save(genome_gifts, 

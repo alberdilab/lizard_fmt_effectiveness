@@ -1,7 +1,7 @@
 # Data statistics
 
 ```{r load_data_stats}
-load("data/03032025data.Rdata")
+load("data/08032025data.Rdata")
 ```
 
 ## Sequencing reads statistics
@@ -45,9 +45,8 @@ data_stats_filter %>%
                     breaks=c("low_quality","mapped_lizard","unmapped_reads","mapped_mags"),
                     labels=c("Low quality","Mapped to host","Unmapped","Mapped to MAGs"),
                     values=c("#CCCCCC", "#bcdee1", "#d8b8a3","#93655c"))+
-      facet_grid(~time_point, scales = "free", labeller = labeller(time_point=c("0_Wild"="Wild","1_Acclimation"="Acclimation", "2_Antibiotics"="Antibiotics",
-                                                                                "3_Transplant1"="Transplant1", "4_Transplant2"="Transplant2", "5_Post-FMT1"="Post1",
-                                                                                "6_Post-FMT2"="Post2"))) +
+      facet_grid(~factor(time_point, level=c("Wild", "Acclimation", "Antibiotics", "Transplant1", "Transplant2", "FMT1", "FMT2")), 
+             scales = "free") +
       theme_minimal() +
       theme(axis.text.x = element_text(angle = 90, hjust = 1, size=0)) +
       labs(y="DNA sequence fraction",x="Samples")
@@ -86,9 +85,8 @@ data_stats_filter %>%
                     labels=c("Recovered","Estimated"),
                     values=c("#52e1e8", "#876b53"))+
       theme_minimal() +
-      facet_grid(~time_point, scales = "free", space="free", labeller = labeller(time_point=c("0_Wild"="Wild","1_Acclimation"="Acclimation", "2_Antibiotics"="Antibiotics",
-                                                                                "3_Transplant1"="Transplant1", "4_Transplant2"="Transplant2", "5_Post-FMT1"="Post1",
-                                                                                "6_Post-FMT2"="Post2")))+
+      facet_grid(~factor(time_point, level=c("Wild", "Acclimation", "Antibiotics", "Transplant1", "Transplant2", "FMT1", "FMT2")), 
+             scales = "free") +
       labs(y = "Samples", x = "Prokaryotic fraction") +
       scale_y_continuous(limits = c(0, 1)) +
       theme(
