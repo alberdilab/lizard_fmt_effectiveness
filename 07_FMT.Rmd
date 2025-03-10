@@ -13,8 +13,7 @@ alpha_div %>%
   pivot_longer(-sample, names_to = "metric", values_to = "value") %>%
   left_join(., sample_metadata, by = "sample") %>%
   mutate(metric=factor(metric,levels=c("richness","neutral", "phylogenetic"))) %>%
-  filter(metric!="phylogenetic") %>%
-  filter(type=="Treatment" & treatment %in% c("FMT1", "FMT2" )) %>% 
+  filter(type=="Treatment" & treatment %in% c("FMT1", "FMT2")) %>% 
   ggplot(aes(y = value, x = treatment, color=treatment, fill=treatment)) +
   geom_boxplot(outlier.shape = NA) +
   geom_jitter(alpha=0.5) +
@@ -120,6 +119,87 @@ adonis2(phylo ~ treatment,
         tt()
 ```
 
+```{r beta_div_nmds_2_plot, comment="", message=FALSE, warning=FALSE}
+p0<-richness %>%
+  vegan::metaMDS(., trymax = 500, k = 2, trace=0) %>%
+  vegan::scores() %>%
+  as_tibble(., rownames = "sample") %>%
+  dplyr::left_join(subset_meta, by = join_by(sample == sample)) %>%
+  group_by(treatment) %>%
+  mutate(x_cen = mean(NMDS1, na.rm = TRUE)) %>%
+  mutate(y_cen = mean(NMDS2, na.rm = TRUE)) %>%
+  ungroup() %>%
+  ggplot(aes(x = NMDS1, y = NMDS2, color = treatment)) +
+  geom_point(size = 4) +
+  scale_color_manual(name="treatment",
+          breaks=c("FMT1", "FMT2"),
+          values=c("#76b183", "#2b4b32")) +
+  geom_segment(aes(x = x_cen, y = y_cen, xend = NMDS1, yend = NMDS2), alpha = 0.9, show.legend = FALSE) +
+  theme(
+    axis.title = element_text(size = 12, face = "bold"),
+    axis.text = element_text(size = 10),
+    panel.background = element_blank(),
+    axis.line = element_line(size = 0.5, linetype = "solid", colour = "black"),
+    legend.text = element_text(size = 10),
+    legend.title = element_text(size = 12),
+    legend.position = "right", legend.box = "vertical"
+    )
+
+p1<-neutral %>%
+  vegan::metaMDS(., trymax = 500, k = 2, trace=0) %>%
+  vegan::scores() %>%
+  as_tibble(., rownames = "sample") %>%
+  dplyr::left_join(subset_meta, by = join_by(sample == sample)) %>%
+  group_by(treatment) %>%
+  mutate(x_cen = mean(NMDS1, na.rm = TRUE)) %>%
+  mutate(y_cen = mean(NMDS2, na.rm = TRUE)) %>%
+  ungroup() %>%
+  ggplot(aes(x = NMDS1, y = NMDS2, color = treatment)) +
+  geom_point(size = 4) +
+  scale_color_manual(name="treatment",
+          breaks=c("FMT1", "FMT2"),
+          values=c("#76b183", "#2b4b32")) +  
+  geom_segment(aes(x = x_cen, y = y_cen, xend = NMDS1, yend = NMDS2), alpha = 0.9, show.legend = FALSE) +
+  theme(
+    axis.title = element_text(size = 12, face = "bold"),
+    axis.text = element_text(size = 10),
+    panel.background = element_blank(),
+    axis.line = element_line(size = 0.5, linetype = "solid", colour = "black"),
+    legend.text = element_text(size = 10),
+    legend.title = element_text(size = 12),
+    legend.position = "right", legend.box = "vertical"
+    )
+
+p2<-phylo %>%
+  vegan::metaMDS(., trymax = 500, k = 2, trace=0) %>%
+  vegan::scores() %>%
+  as_tibble(., rownames = "sample") %>%
+  dplyr::left_join(subset_meta, by = join_by(sample == sample)) %>%
+  group_by(treatment) %>%
+  mutate(x_cen = mean(NMDS1, na.rm = TRUE)) %>%
+  mutate(y_cen = mean(NMDS2, na.rm = TRUE)) %>%
+  ungroup() %>%
+  ggplot(aes(x = NMDS1, y = NMDS2, color = treatment)) +
+  geom_point(size = 4) +
+  scale_color_manual(name="treatment",
+          breaks=c("FMT1", "FMT2"),
+          values=c("#76b183", "#2b4b32")) +
+  geom_segment(aes(x = x_cen, y = y_cen, xend = NMDS1, yend = NMDS2), alpha = 0.9, show.legend = FALSE) +
+  theme(
+    axis.title = element_text(size = 12, face = "bold"),
+    axis.text = element_text(size = 10),
+    panel.background = element_blank(),
+    axis.line = element_line(size = 0.5, linetype = "solid", colour = "black"),
+    legend.text = element_text(size = 10),
+    legend.title = element_text(size = 12),
+    legend.position = "right", legend.box = "vertical"
+    )
+```
+
+```{r beta_neutral_nmds_plot_donors_2_final, fig.height=8, fig.width=12, fig.fullwidth=TRUE}
+ggarrange(p0, p1, p2, ncol=3, nrow=1, common.legend = TRUE, legend="right")
+```
+
 
 ## Do FMT change the microbial community compared to antibiotics and acclimation?
 
@@ -136,13 +216,16 @@ alpha_div %>%
   pivot_longer(-sample, names_to = "metric", values_to = "value") %>%
   left_join(., sample_metadata, by = "sample") %>%
   mutate(metric=factor(metric,levels=c("richness","neutral", "phylogenetic"))) %>%
-  filter(metric!="neutral")%>%
   filter(type=="Treatment" & treatment %in% c( "Antibiotics","Acclimation", "FMT1")) %>% 
   ggplot(aes(y = value, x = treatment, color=treatment, fill=treatment)) +
   geom_jitter(width = 0.2, show.legend = FALSE) +
   geom_boxplot(width = 0.5, alpha=0.5, outlier.shape = NA, show.legend = FALSE) +
-#  scale_color_manual(values=treatment_colors)+
-#  scale_fill_manual(values=treatment_colors) +
+  scale_color_manual(name="Treatment",
+          breaks=c("Antibiotics","Acclimation", "FMT1"),
+          values=c("#003a45",'#008080', "#76b183")) +
+      scale_fill_manual(name="Treatment",
+          breaks=c("Antibiotics","Acclimation", "FMT1"),
+          values=c("#003a4550",'#00808050',"#76b18350")) +
   facet_wrap(. ~ metric, scales = "free") +
       theme_classic() +
         theme(
@@ -183,11 +266,11 @@ summary(Model_phylo)
 
 ```{r filter_data_beta6, comment="", message=FALSE, warning=FALSE}
 samples_to_keep <- sample_metadata %>%
-  filter(type == "Treatment" & treatment %in% c("Acclimation", "Antibiotics", "Post-FMT1")) %>% 
+  filter(type == "Treatment" & treatment %in% c("Acclimation", "Antibiotics", "FMT1")) %>% 
   select(sample) %>% 
   pull()
 subset_meta <- sample_metadata %>%
-  filter(type == "Treatment" & treatment %in% c("Acclimation", "Antibiotics", "Post-FMT1"))
+  filter(type == "Treatment" & treatment %in% c("Acclimation", "Antibiotics", "FMT1"))
 ```
 
 ***Richness***
@@ -197,6 +280,9 @@ richness <- as.dist(richness[rownames(richness) %in% samples_to_keep,
                colnames(richness) %in% samples_to_keep])
 
 betadisper(richness, subset_meta$treatment) %>% permutest(.) 
+```
+
+```{r permanova_rich6_adonis, comment="", message=FALSE, warning=FALSE}
 adonis2(richness ~ treatment,
         data = subset_meta %>% arrange(match(sample,labels(richness))),
         permutations = 999,
@@ -214,7 +300,10 @@ neutral <- as.matrix(beta_q1n$S)
 neutral <- as.dist(neutral[rownames(neutral) %in% samples_to_keep,
                colnames(neutral) %in% samples_to_keep])
 
-betadisper(neutral, subset_meta$treatment) %>% permutest(.) 
+betadisper(neutral, subset_meta$treatment) %>% permutest(.)
+```
+
+```{r permanova_neutral6_adonis, comment="", message=FALSE, warning=FALSE}
 adonis2(neutral ~ treatment,
         data = subset_meta %>% arrange(match(sample,labels(neutral))),
         permutations = 999,
@@ -232,6 +321,8 @@ phylo <- as.matrix(beta_q1p$S)
 phylo <- as.dist(phylo[rownames(phylo) %in% samples_to_keep,
                colnames(phylo) %in% samples_to_keep])
 betadisper(phylo, subset_meta$treatment) %>% permutest(.) 
+```
+```{r permanova_phylo6_adonis, comment="", message=FALSE, warning=FALSE}
 adonis2(phylo ~ treatment,
         data = subset_meta %>% arrange(match(sample,labels(phylo))),
         permutations = 999,
@@ -241,6 +332,87 @@ adonis2(phylo ~ treatment,
 ```
 ```{r pairwise_phylo6, comment="", message=FALSE, warning=FALSE}
 pairwise.adonis(phylo, subset_meta$treatment, perm = 999)
+```
+
+```{r beta_div_nmds_3_plot, comment="", message=FALSE, warning=FALSE}
+p0<-richness %>%
+  vegan::metaMDS(., trymax = 500, k = 2, trace=0) %>%
+  vegan::scores() %>%
+  as_tibble(., rownames = "sample") %>%
+  dplyr::left_join(subset_meta, by = join_by(sample == sample)) %>%
+  group_by(treatment) %>%
+  mutate(x_cen = mean(NMDS1, na.rm = TRUE)) %>%
+  mutate(y_cen = mean(NMDS2, na.rm = TRUE)) %>%
+  ungroup() %>%
+  ggplot(aes(x = NMDS1, y = NMDS2, color = treatment)) +
+  geom_point(size = 4) +
+  scale_color_manual(name="treatment",
+          breaks=c("Acclimation", "Antibiotics", "FMT1"),
+          values=c("#003a45",'#008080', "#76b183")) +
+  geom_segment(aes(x = x_cen, y = y_cen, xend = NMDS1, yend = NMDS2), alpha = 0.9, show.legend = FALSE) +
+  theme(
+    axis.title = element_text(size = 12, face = "bold"),
+    axis.text = element_text(size = 10),
+    panel.background = element_blank(),
+    axis.line = element_line(size = 0.5, linetype = "solid", colour = "black"),
+    legend.text = element_text(size = 10),
+    legend.title = element_text(size = 12),
+    legend.position = "right", legend.box = "vertical"
+    )
+
+p1<-neutral %>%
+  vegan::metaMDS(., trymax = 500, k = 2, trace=0) %>%
+  vegan::scores() %>%
+  as_tibble(., rownames = "sample") %>%
+  dplyr::left_join(subset_meta, by = join_by(sample == sample)) %>%
+  group_by(treatment) %>%
+  mutate(x_cen = mean(NMDS1, na.rm = TRUE)) %>%
+  mutate(y_cen = mean(NMDS2, na.rm = TRUE)) %>%
+  ungroup() %>%
+  ggplot(aes(x = NMDS1, y = NMDS2, color = treatment)) +
+  geom_point(size = 4) +
+  scale_color_manual(name="treatment",
+          breaks=c("Acclimation", "Antibiotics", "FMT1"),
+          values=c("#003a45",'#008080', "#76b183")) +  
+  geom_segment(aes(x = x_cen, y = y_cen, xend = NMDS1, yend = NMDS2), alpha = 0.9, show.legend = FALSE) +
+  theme(
+    axis.title = element_text(size = 12, face = "bold"),
+    axis.text = element_text(size = 10),
+    panel.background = element_blank(),
+    axis.line = element_line(size = 0.5, linetype = "solid", colour = "black"),
+    legend.text = element_text(size = 10),
+    legend.title = element_text(size = 12),
+    legend.position = "right", legend.box = "vertical"
+    )
+
+p2<-phylo %>%
+  vegan::metaMDS(., trymax = 500, k = 2, trace=0) %>%
+  vegan::scores() %>%
+  as_tibble(., rownames = "sample") %>%
+  dplyr::left_join(subset_meta, by = join_by(sample == sample)) %>%
+  group_by(treatment) %>%
+  mutate(x_cen = mean(NMDS1, na.rm = TRUE)) %>%
+  mutate(y_cen = mean(NMDS2, na.rm = TRUE)) %>%
+  ungroup() %>%
+  ggplot(aes(x = NMDS1, y = NMDS2, color = treatment)) +
+  geom_point(size = 4) +
+  scale_color_manual(name="treatment",
+          breaks=c("Acclimation", "Antibiotics", "FMT1"),
+          values=c("#003a45",'#008080', "#76b183")) +
+  geom_segment(aes(x = x_cen, y = y_cen, xend = NMDS1, yend = NMDS2), alpha = 0.9, show.legend = FALSE) +
+  theme(
+    axis.title = element_text(size = 12, face = "bold"),
+    axis.text = element_text(size = 10),
+    panel.background = element_blank(),
+    axis.line = element_line(size = 0.5, linetype = "solid", colour = "black"),
+    legend.text = element_text(size = 10),
+    legend.title = element_text(size = 12),
+    legend.position = "right", legend.box = "vertical"
+    )
+```
+
+```{r beta_neutral_nmds_plot_donors_3_final, fig.height=8, fig.width=12, fig.fullwidth=TRUE}
+ggarrange(p0, p1, p2, ncol=3, nrow=1, common.legend = TRUE, legend="right")
 ```
 
 ## Is the gut microbiota similar to the donor after FMT?
@@ -273,8 +445,12 @@ alpha_div %>%
   ggplot(aes(y = value, x = treatment, color=treatment, fill=treatment)) +
   geom_jitter(width = 0.2, show.legend = FALSE) +
   geom_boxplot(width = 0.5, alpha=0.5, outlier.shape = NA, show.legend = FALSE) +
-#  scale_color_manual(values=treatment_colors)+
-#  scale_fill_manual(values=treatment_colors) +
+  scale_color_manual(name="treatment",
+          breaks=c("FMT","Transplant"),
+          values=c('#40714b', "#d5b52c")) +
+  scale_fill_manual(name="treatment",
+          breaks=c("FMT","Transplant"),
+          values=c('#40714b50', "#d5b52c50")) +
   facet_wrap(. ~ metric, scales = "free") +
       theme_classic() +
         theme(
@@ -321,6 +497,8 @@ richness <- as.dist(richness[rownames(richness) %in% samples_to_keep,
                colnames(richness) %in% samples_to_keep])
 
 betadisper(richness, subset_meta$treatment) %>% permutest(.) 
+```
+```{r permanova_rich7_adonis, comment="", message=FALSE, warning=FALSE}
 adonis2(richness ~ treatment,
         data = subset_meta %>% arrange(match(sample,labels(richness))),
         permutations = 999,
@@ -336,6 +514,9 @@ neutral <- as.dist(neutral[rownames(neutral) %in% samples_to_keep,
                colnames(neutral) %in% samples_to_keep])
 
 betadisper(neutral, subset_meta$treatment) %>% permutest(.) 
+```
+
+```{r permanova_neutral7_adonis, comment="", message=FALSE, warning=FALSE}
 adonis2(neutral ~ treatment,
         data = subset_meta %>% arrange(match(sample,labels(neutral))),
         permutations = 999,
@@ -344,9 +525,25 @@ adonis2(neutral ~ treatment,
         tt()
 ```
 
+***Phylogenetic***
+```{r permanova_phylo7, comment="", message=FALSE, warning=FALSE}
+phylo <- as.matrix(beta_q1p$S)
+phylo <- as.dist(phylo[rownames(phylo) %in% samples_to_keep,
+               colnames(phylo) %in% samples_to_keep])
+betadisper(phylo, subset_meta$treatment) %>% permutest(.) 
+```
 
-```{r beta_div_nmds_neutral_plot7, comment=""}
-neutral %>%
+```{r permanova_phylo7_adonis, comment="", message=FALSE, warning=FALSE}
+adonis2(phylo ~ treatment,
+        data = subset_meta %>% arrange(match(sample,labels(phylo))),
+        permutations = 999,
+        strata = subset_meta %>% arrange(match(sample,labels(phylo))) %>% pull(individual)) %>%
+        broom::tidy() %>%
+        tt()
+```
+
+```{r beta_div_nmds_7_plot, comment="", message=FALSE, warning=FALSE}
+p0<-richness %>%
   vegan::metaMDS(., trymax = 500, k = 2, trace=0) %>%
   vegan::scores() %>%
   as_tibble(., rownames = "sample") %>%
@@ -357,7 +554,59 @@ neutral %>%
   ungroup() %>%
   ggplot(aes(x = NMDS1, y = NMDS2, color = treatment)) +
   geom_point(size = 4) +
- # scale_color_manual(values = treatment_colors) +
+  scale_color_manual(name="treatment",
+          breaks=c("FMT","Transplant"),
+          values=c('#40714b', "#d5b52c")) +
+  geom_segment(aes(x = x_cen, y = y_cen, xend = NMDS1, yend = NMDS2), alpha = 0.9, show.legend = FALSE) +
+  theme(
+    axis.title = element_text(size = 12, face = "bold"),
+    axis.text = element_text(size = 10),
+    panel.background = element_blank(),
+    axis.line = element_line(size = 0.5, linetype = "solid", colour = "black"),
+    legend.text = element_text(size = 10),
+    legend.title = element_text(size = 12),
+    legend.position = "right", legend.box = "vertical"
+    )
+
+p1<-neutral %>%
+  vegan::metaMDS(., trymax = 500, k = 2, trace=0) %>%
+  vegan::scores() %>%
+  as_tibble(., rownames = "sample") %>%
+  dplyr::left_join(subset_meta, by = join_by(sample == sample)) %>%
+  group_by(treatment) %>%
+  mutate(x_cen = mean(NMDS1, na.rm = TRUE)) %>%
+  mutate(y_cen = mean(NMDS2, na.rm = TRUE)) %>%
+  ungroup() %>%
+  ggplot(aes(x = NMDS1, y = NMDS2, color = treatment)) +
+  geom_point(size = 4) +
+  scale_color_manual(name="treatment",
+          breaks=c("FMT","Transplant"),
+          values=c('#40714b', "#d5b52c"))+  
+  geom_segment(aes(x = x_cen, y = y_cen, xend = NMDS1, yend = NMDS2), alpha = 0.9, show.legend = FALSE) +
+  theme(
+    axis.title = element_text(size = 12, face = "bold"),
+    axis.text = element_text(size = 10),
+    panel.background = element_blank(),
+    axis.line = element_line(size = 0.5, linetype = "solid", colour = "black"),
+    legend.text = element_text(size = 10),
+    legend.title = element_text(size = 12),
+    legend.position = "right", legend.box = "vertical"
+    )
+
+p2<-phylo %>%
+  vegan::metaMDS(., trymax = 500, k = 2, trace=0) %>%
+  vegan::scores() %>%
+  as_tibble(., rownames = "sample") %>%
+  dplyr::left_join(subset_meta, by = join_by(sample == sample)) %>%
+  group_by(treatment) %>%
+  mutate(x_cen = mean(NMDS1, na.rm = TRUE)) %>%
+  mutate(y_cen = mean(NMDS2, na.rm = TRUE)) %>%
+  ungroup() %>%
+  ggplot(aes(x = NMDS1, y = NMDS2, color = treatment)) +
+  geom_point(size = 4) +
+  scale_color_manual(name="treatment",
+          breaks=c("FMT","Transplant"),
+          values=c('#40714b', "#d5b52c")) +
   geom_segment(aes(x = x_cen, y = y_cen, xend = NMDS1, yend = NMDS2), alpha = 0.9, show.legend = FALSE) +
   theme(
     axis.title = element_text(size = 12, face = "bold"),
@@ -370,19 +619,10 @@ neutral %>%
     )
 ```
 
-***Phylogenetic***
-```{r permanova_phylo7, comment="", message=FALSE, warning=FALSE}
-phylo <- as.matrix(beta_q1p$S)
-phylo <- as.dist(phylo[rownames(phylo) %in% samples_to_keep,
-               colnames(phylo) %in% samples_to_keep])
-betadisper(phylo, subset_meta$treatment) %>% permutest(.) 
-adonis2(phylo ~ treatment,
-        data = subset_meta %>% arrange(match(sample,labels(phylo))),
-        permutations = 999,
-        strata = subset_meta %>% arrange(match(sample,labels(phylo))) %>% pull(individual)) %>%
-        broom::tidy() %>%
-        tt()
+```{r beta_neutral_nmds_plot_post7_final, fig.height=8, fig.width=12, fig.fullwidth=TRUE}
+ggarrange(p0, p1, p2, ncol=3, nrow=1, common.legend = TRUE, legend="right")
 ```
+
 
 ### Structural zeros
 
@@ -828,7 +1068,7 @@ difference_table %>%
   ggplot(aes(x=forcats::fct_reorder(Function,Difference), y=Difference, fill=group_color)) + 
   geom_col() +
 #  geom_point(size=4) + 
-  #scale_fill_manual() +
+  scale_fill_manual(values=c('#40714b', "#d5b52c")) +
   geom_hline(yintercept=0) + 
   coord_flip()+
   theme(axis.text = element_text(size = 10),
