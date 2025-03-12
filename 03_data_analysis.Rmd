@@ -69,7 +69,7 @@ genome_metadata <- genome_metadata %>%
 
 ### Alpha diversity
 
-```{r alpha_div, comment="", message=FALSE, warning=FALSE}
+```{r alpha_div, comment="", message=FALSE, warning=FALSE, eval=FALSE}
 # Calculate Hill numbers
 richness <- genome_counts_filt %>%
   column_to_rownames(var = "genome") %>%

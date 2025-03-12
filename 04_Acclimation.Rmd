@@ -418,7 +418,7 @@ phylo_taxonomy <- genome_metadata %>%
 
 physeq_genome_filtered <- phyloseq(phylo_genome, phylo_taxonomy, phylo_samples)
 ```
-```{r ancom_rand_accl_wild, comment="", message=FALSE, warning=FALSE, eval=FALSE}
+```{r ancom_rand_accl_wild, comment="", message=FALSE, warning=FALSE}
 ancom_rand_output = ancombc2(data = physeq_genome_filtered, 
                   assay_name = "counts", 
                   tax_level = NULL,
@@ -448,12 +448,12 @@ ancom_rand_output = ancombc2(data = physeq_genome_filtered,
 ```
 
 ```{r save_ancombc1_wild_accli, warning=FALSE, comments="", message=FALSE, eval=FALSE}
-save(ancom_rand_output, 
-     file = "data/ancombc_wild_accl.Rdata")
+save(ancom_rand_output2, 
+     file = "data/ancombc_wild_accl_1203.Rdata")
 ```
 
-```{r load_ancombc_wild_accli, warning=FALSE, comments="", message=FALSE}
-load("data/ancombc_wild_accl.Rdata")
+```{r load_ancombc_wild_accli, warning=FALSE, comments="", message=FALSE, eval=FALSE}
+load("data/ancombc_wild_accl_1203.Rdata")
 ```
 
 ```{r ancom_rand1_wild_accli, comment="", message=FALSE, warning=FALSE}
@@ -461,13 +461,13 @@ taxonomy <- data.frame(physeq_genome_filtered@tax_table) %>%
   rownames_to_column(., "taxon") %>%
   mutate_at(vars(order, phylum, family, genus, species), ~ str_replace(., "[dpcofgs]__", ""))
 
-ancombc_rand_table_mag <- ancom_rand_output$res %>%
-  dplyr::select(taxon, lfc_time_point1_Acclimation, p_time_point1_Acclimation) %>%
-  filter(p_time_point1_Acclimation < 0.05) %>%
-  dplyr::arrange(p_time_point1_Acclimation) %>%
+ancombc_rand_table_mag <- ancom_rand_output2$res %>%
+  dplyr::select(taxon, lfc_time_pointWild, p_time_pointWild) %>%
+  filter(p_time_pointWild < 0.05) %>%
+  dplyr::arrange(p_time_pointWild) %>%
   merge(., taxonomy, by="taxon") %>%
   mutate_at(vars(phylum, species), ~ str_replace(., "[dpcofgs]__", ""))%>%
-  dplyr::arrange(lfc_time_point1_Acclimation)
+  dplyr::arrange(lfc_time_pointWild)
 
 colors_alphabetic <- read_tsv("https://raw.githubusercontent.com/earthhologenome/EHI_taxonomy_colour/main/ehi_phylum_colors.tsv") %>%
   mutate_at(vars(phylum), ~ str_replace(., "[dpcofgs]__", ""))  %>%
@@ -489,7 +489,7 @@ tax_color <- merge(tax_table, colors_alphabetic, by="phylum")%>%
 ```{r ancombc_rand_plot_phy1_wild_accli, comment="", message=FALSE, warning=FALSE, fig.height=10, fig.width=8, fig.fullwidth=TRUE}
 ancombc_rand_table_mag%>%
       mutate(genome=factor(taxon,levels=ancombc_rand_table_mag$taxon)) %>%
-ggplot(., aes(x=lfc_time_point1_Acclimation, y=forcats::fct_reorder(genome,lfc_time_point1_Acclimation), fill=phylum)) + #forcats::fct_rev()
+ggplot(., aes(x=lfc_time_pointWild, y=forcats::fct_reorder(genome,lfc_time_pointWild), fill=phylum)) + #forcats::fct_rev()
   geom_col() + 
   scale_fill_manual(values=tax_color) + 
   geom_hline(yintercept=0) + 
@@ -510,16 +510,16 @@ ggplot(., aes(x=lfc_time_point1_Acclimation, y=forcats::fct_reorder(genome,lfc_t
 ***Phyla of the significant MAGs***
 ```{r acclim_sign_features_wild_accli, comment="", message=FALSE, warning=FALSE}
 ancombc_rand_table_mag%>%
-  filter(lfc_time_point1_Acclimation<0)  %>% 
+  filter(lfc_time_pointWild<0)  %>% 
   count(phylum, name = "sample_count") %>%
   arrange(desc(sample_count))  
 
 ancombc_rand_table_mag%>%
-  filter(lfc_time_point1_Acclimation<0)  %>% 
+  filter(lfc_time_pointWild<0)  %>% 
   select(phylum, genus, species)
 
 ancombc_rand_table_mag%>%
-  filter(lfc_time_point1_Acclimation<0)  %>% 
+  filter(lfc_time_pointWild<0)  %>% 
   count(genus, name = "sample_count") %>%
   arrange(desc(sample_count))
 ```
@@ -724,8 +724,11 @@ acclimation_samples_warm <- sample_metadata %>%
   filter(Population == "Hot_dry" & time_point == "Acclimation") %>% 
   dplyr::select(sample) %>% pull()
 
+sample_sub <- sample_metadata %>%
+  filter(Population == "Hot_dry" & treatment %in% c("Acclimation", "Wild"))
+ 
 structural_zeros <- genome_counts_filt %>% 
-  select(one_of(c("genome",subset_meta$sample))) %>%
+  select(one_of(c("genome",sample_sub$sample))) %>%
   filter(rowSums(across(where(is.numeric), ~ . != 0)) > 0) %>%
   select(genome, where(~ is.numeric(.) && sum(.) > 0)) %>% 
    rowwise() %>% #compute for each row (genome)
@@ -768,9 +771,6 @@ GIFTs_elements_filtered <- GIFTs_elements[rownames(GIFTs_elements) %in% structur
 GIFTs_elements_filtered <- as.data.frame(GIFTs_elements_filtered) %>% 
   select_if(~ !is.numeric(.) || sum(.) != 0)
 
-sample_sub <- sample_metadata %>%
-  filter(Population == "Hot_dry" & treatment %in% c("Acclimation", "Wild"))
-
 genome_counts_row <- genome_counts_filt %>%
   mutate_at(vars(-genome),~./sum(.)) %>% 
   filter(genome %in% structural_zeros$genome) %>% 
@@ -800,7 +800,7 @@ element_gift %>%
 ```
 
 ### Differential abundance analysis: composition
-```{r phylo_acclim_wild_warm, comment="", message=FALSE, warning=FALSE, eval=FALSE}
+```{r phylo_acclim_wild_warm, comment="", message=FALSE, warning=FALSE}
 phylo_samples_warm <- sample_metadata %>%
   filter(Population == "Hot_dry" & time_point %in% c("Wild", "Acclimation") )%>% 
   column_to_rownames("sample") %>% 
@@ -821,7 +821,7 @@ phylo_taxonomy_warm <- genome_metadata %>%
 
 physeq_genome_filtered_warm <- phyloseq(phylo_genome_warm, phylo_taxonomy_warm, phylo_samples_warm)
 ```
-```{r ancom_rand_accl_wild_warm, comment="", message=FALSE, warning=FALSE, eval=FALSE}
+```{r ancom_rand_accl_wild_warm, comment="", message=FALSE, warning=FALSE}
 ancom_rand_output_warm = ancombc2(data = physeq_genome_filtered_warm, 
                   assay_name = "counts", 
                   tax_level = NULL,
@@ -852,25 +852,25 @@ ancom_rand_output_warm = ancombc2(data = physeq_genome_filtered_warm,
 
 ```{r save_ancombc1_wild_accli_warm, warning=FALSE, comments="", message=FALSE, eval=FALSE}
 save(ancom_rand_output_warm, 
-     file = "data/ancombc_wild_accl_warm.Rdata")
+     file = "data/ancombc_wild_accl_warm_1203.Rdata")
 ```
 
 ```{r load_ancombc_wild_accli_warm, warning=FALSE, comments="", message=FALSE, eval=FALSE}
-load("data/ancombc_wild_accl_warm.Rdata")
+load("data/ancombc_wild_accl_warm_1203.Rdata")
 ```
 
-```{r ancom_rand1_wild_accli_warm, comment="", message=FALSE, warning=FALSE, eval=FALSE}
+```{r ancom_rand1_wild_accli_warm, comment="", message=FALSE, warning=FALSE}
 taxonomy <- data.frame(physeq_genome_filtered_warm@tax_table) %>%
   rownames_to_column(., "taxon") %>%
   mutate_at(vars(order, phylum, family, genus, species), ~ str_replace(., "[dpcofgs]__", ""))
 
 ancombc_rand_table_mag <- ancom_rand_output_warm$res %>%
-  dplyr::select(taxon, lfc_time_point1_Acclimation, p_time_point1_Acclimation) %>%
-  filter(p_time_point1_Acclimation < 0.05) %>%
-  dplyr::arrange(p_time_point1_Acclimation) %>%
+  dplyr::select(taxon, lfc_time_pointWild, p_time_pointWild) %>%
+  filter(p_time_pointWild < 0.05) %>%
+  dplyr::arrange(p_time_pointWild) %>%
   merge(., taxonomy, by="taxon") %>%
   mutate_at(vars(phylum, species), ~ str_replace(., "[dpcofgs]__", ""))%>%
-  dplyr::arrange(lfc_time_point1_Acclimation)
+  dplyr::arrange(lfc_time_pointWild)
 
 colors_alphabetic <- read_tsv("https://raw.githubusercontent.com/earthhologenome/EHI_taxonomy_colour/main/ehi_phylum_colors.tsv") %>%
   mutate_at(vars(phylum), ~ str_replace(., "[dpcofgs]__", ""))  %>%
@@ -889,10 +889,10 @@ tax_color <- merge(tax_table, colors_alphabetic, by="phylum")%>%
 	pull()
 ```
 
-```{r ancombc_rand_plot_phy1_wild_accli_warm, comment="", message=FALSE, warning=FALSE, fig.height=10, fig.width=8, fig.fullwidth=TRUE, eval=FALSE}
+```{r ancombc_rand_plot_phy1_wild_accli_warm, comment="", message=FALSE, warning=FALSE, fig.height=10, fig.width=8, fig.fullwidth=TRUE}
 ancombc_rand_table_mag%>%
       mutate(genome=factor(taxon,levels=ancombc_rand_table_mag$taxon)) %>%
-ggplot(., aes(x=lfc_time_point1_Acclimation, y=forcats::fct_reorder(genome,lfc_time_point1_Acclimation), fill=phylum)) + #forcats::fct_rev()
+ggplot(., aes(x=lfc_time_pointWild, y=forcats::fct_reorder(genome,lfc_time_pointWild), fill=phylum)) + #forcats::fct_rev()
   geom_col() + 
   scale_fill_manual(values=tax_color) + 
   geom_hline(yintercept=0) + 
@@ -911,18 +911,18 @@ ggplot(., aes(x=lfc_time_point1_Acclimation, y=forcats::fct_reorder(genome,lfc_t
 ```
 
 ***Phyla of the significant MAGs***
-```{r acclim_sign_features_wild_accli_warm, comment="", message=FALSE, warning=FALSE, eval=FALSE}
+```{r acclim_sign_features_wild_accli_warm, comment="", message=FALSE, warning=FALSE}
 ancombc_rand_table_mag%>%
-  filter(lfc_time_point1_Acclimation<0)  %>% 
+  filter(lfc_time_pointWild<0)  %>% 
   count(phylum, name = "sample_count") %>%
   arrange(desc(sample_count))  
 
 ancombc_rand_table_mag%>%
-  filter(lfc_time_point1_Acclimation<0)  %>% 
+  filter(lfc_time_pointWild<0)  %>% 
   select(phylum, genus, species)
 
 ancombc_rand_table_mag%>%
-  filter(lfc_time_point1_Acclimation<0)  %>% 
+  filter(lfc_time_pointWild<0)  %>% 
   count(genus, name = "sample_count") %>%
   arrange(desc(sample_count))
 ```

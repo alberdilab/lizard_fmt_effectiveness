@@ -839,7 +839,7 @@ physeq_genome_filtered <- phyloseq(phylo_genome, phylo_taxonomy, phylo_samples)
 ```
 
 
-```{r ancom_rand_fmt_tranp, comment="", message=FALSE, warning=FALSE, eval=FALSE}
+```{r ancom_rand_fmt_tranp, comment="", message=FALSE, warning=FALSE}
 ancom_rand_output = ancombc2(data = physeq_genome_filtered, 
                   assay_name = "counts", 
                   tax_level = NULL,
@@ -871,7 +871,7 @@ ancom_rand_output = ancombc2(data = physeq_genome_filtered,
 save(ancom_rand_output, file = "data/ancombc_FMT_transplant.Rdata")
 ```
 
-```{r load_ancombc_fmt_tranp, warning=FALSE, comments="", message=FALSE}
+```{r load_ancombc_fmt_tranp, warning=FALSE, comments="", message=FALSE, eval=FALSE}
 load("data/ancombc_FMT_transplant.Rdata")
 ```
 
@@ -1099,6 +1099,7 @@ log_fold %>%
   ylab("Log_fold")+
   labs(fill="Treatment")
 ```
+
 #### Community functions differences
 
 ***MCI***
