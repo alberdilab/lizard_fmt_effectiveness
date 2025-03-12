@@ -867,8 +867,8 @@ ancom_rand_output = ancombc2(data = physeq_genome_filtered,
 
 ```
 
-```{r save_ancombc_fmt_tranp, warning=FALSE, comments="", message=FALSE, eval=FALSE}
-save(ancom_rand_output, file = "data/ancombc_FMT_transplant.Rdata")
+```{r save_ancombc_fmt_tranp, warning=FALSE, comments="", message=FALSE}
+save(ancom_rand_output, file = "data/ancombc_FMT_transplant_1203.Rdata")
 ```
 
 ```{r load_ancombc_fmt_tranp, warning=FALSE, comments="", message=FALSE, eval=FALSE}
@@ -1063,7 +1063,7 @@ log_fold <- means_gift %>%
   left_join(., difference_table, by="Elements")
 ```
 
-```{r commun_log_elem_plot_FMt_tran, comment="", message=FALSE, warning=FALSE, fig.height=6, fig.width=12, fig.fullwidth=TRUE, eval=TRUE}
+```{r commun_log_elem_plot_FMt_tran, comment="", message=FALSE, warning=FALSE, fig.height=6, fig.width=12, fig.fullwidth=TRUE}
 difference_table %>%
   ggplot(aes(x=forcats::fct_reorder(Function,Difference), y=Difference, fill=group_color)) + 
   geom_col() +
@@ -1081,7 +1081,7 @@ difference_table %>%
   ylab("Mean difference")+
   labs(fill="Treatment")
 ```
-```{r commun_wilcox_elem_plot_FMt_tran, comment="", message=FALSE, warning=FALSE, fig.height=6, fig.width=12, fig.fullwidth=TRUE, eval=TRUE}
+```{r commun_wilcox_elem_plot_FMt_tran, comment="", message=FALSE, warning=FALSE, fig.height=6, fig.width=12, fig.fullwidth=TRUE}
 log_fold %>%
   filter(Elements!="D0611") %>% 
   ggplot(aes(x=forcats::fct_reorder(Function,logfc_fmt_transplant), y=logfc_fmt_transplant, fill=group_color)) + 

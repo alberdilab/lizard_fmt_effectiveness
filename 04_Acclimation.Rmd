@@ -447,7 +447,7 @@ ancom_rand_output = ancombc2(data = physeq_genome_filtered,
 
 ```
 
-```{r save_ancombc1_wild_accli, warning=FALSE, comments="", message=FALSE, eval=FALSE}
+```{r save_ancombc1_wild_accli, warning=FALSE, comments="", message=FALSE}
 save(ancom_rand_output2, 
      file = "data/ancombc_wild_accl_1203.Rdata")
 ```
@@ -850,7 +850,7 @@ ancom_rand_output_warm = ancombc2(data = physeq_genome_filtered_warm,
 
 ```
 
-```{r save_ancombc1_wild_accli_warm, warning=FALSE, comments="", message=FALSE, eval=FALSE}
+```{r save_ancombc1_wild_accli_warm, warning=FALSE, comments="", message=FALSE}
 save(ancom_rand_output_warm, 
      file = "data/ancombc_wild_accl_warm_1203.Rdata")
 ```
