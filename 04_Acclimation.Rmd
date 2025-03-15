@@ -1,4 +1,4 @@
-## Does captivity change the microbial community?
+# Does captivity change the microbial community?
 
 ```{r filter_data_accli, comment="", message=FALSE, warning=FALSE}
 alpha_div_meta <- alpha_div %>%
@@ -6,7 +6,7 @@ alpha_div_meta <- alpha_div %>%
   filter(time_point %in% c("Acclimation", "Wild") ) 
 ```
 
-### Alpha diversity
+## Alpha diversity
 
 ```{r alpha_div_plot_1_accli, comment="", message=FALSE, warning=FALSE}
 label_map <- c(
@@ -54,8 +54,6 @@ alpha_div %>%
 ```{r LMM_accli, comment="", message=FALSE, warning=FALSE}
 Modelq0GLMMNB <- glmer.nb(richness ~ Population*time_point+(1|individual), data = alpha_div_meta)
 summary(Modelq0GLMMNB)
-emmeans::emmeans(Modelq0GLMMNB, pairwise ~ time_point)
-emmeans::emmeans(Modelq0GLMMNB, pairwise ~ Population)
 ```
 
 ***Neutral***
@@ -63,8 +61,6 @@ emmeans::emmeans(Modelq0GLMMNB, pairwise ~ Population)
 Model_neutral <- nlme::lme(fixed = neutral ~ time_point*Population, data = alpha_div_meta,
                random = ~ 1 | individual)
 summary(Model_neutral)
-emmeans::emmeans(Model_neutral, pairwise ~ time_point)
-emmeans::emmeans(Model_neutral, pairwise ~ Population)
 ```
 
 ***Phylogenetic***
@@ -72,11 +68,9 @@ emmeans::emmeans(Model_neutral, pairwise ~ Population)
 Model_phylo <- nlme::lme(fixed = phylogenetic ~ time_point*Population, data = alpha_div_meta,
                random = ~ 1 | individual)
 summary(Model_phylo)
-emmeans::emmeans(Model_neutral, pairwise ~ time_point)
-emmeans::emmeans(Model_neutral, pairwise ~ Population)
 ```
 
-### Beta diversity
+## Beta diversity
 ```{r filter_data1_accli, comment="", message=FALSE, warning=FALSE}
 samples_to_keep <- sample_metadata %>%
   filter(time_point %in% c("Acclimation", "Wild")) %>% 
@@ -104,18 +98,6 @@ adonis2(richness ~ time_point*Population,
         tt()
 ```
 
-```{r permanova_richness_accli_1, comment="", message=FALSE, warning=FALSE}
-subset_meta_arrange <- column_to_rownames(subset_meta, "Tube_code")
-subset_meta_arrange<-subset_meta_arrange[labels(richness),]
-
-pairwise <- pairwise.adonis(richness, subset_meta_arrange$Population, perm=999)
-pairwise%>%
-  tt()
-pairwise <- pairwise.adonis(richness, subset_meta_arrange$time_point, perm=999)
-pairwise%>%
-  tt()
-```
-
 ***Neutral***
 ```{r permanova_neutral_accli, comment="", message=FALSE, warning=FALSE}
 neutral <- as.matrix(beta_q1n$S)
@@ -135,18 +117,6 @@ adonis2(neutral ~ time_point*Population,
         tt()
 ```
 
-```{r permanova_neutral_accli_1, comment="", message=FALSE, warning=FALSE}
-subset_meta_arrange <- column_to_rownames(subset_meta, "Tube_code")
-subset_meta_arrange<-subset_meta_arrange[labels(neutral),]
-
-pairwise <- pairwise.adonis(neutral, subset_meta_arrange$Population, perm=999)
-pairwise%>%
-  tt()
-pairwise <- pairwise.adonis(neutral, subset_meta_arrange$time_point, perm=999)
-pairwise%>%
-  tt()
-```
-
 ***Phylogenetic***
 ```{r permanova_phylo_accli, comment="", message=FALSE, warning=FALSE}
 phylo <- as.matrix(beta_q1p$S)
@@ -163,18 +133,6 @@ adonis2(phylo ~ time_point*Population,
         by="terms") %>%
         broom::tidy() %>%
         tt()
-```
-
-```{r permanova_phylo_accli_1, comment="", message=FALSE, warning=FALSE}
-subset_meta_arrange <- column_to_rownames(subset_meta, "Tube_code")
-subset_meta_arrange<-subset_meta_arrange[labels(phylo),]
-
-pairwise <- pairwise.adonis(phylo, subset_meta_arrange$Population, perm=999)
-pairwise%>%
-  tt()
-pairwise <- pairwise.adonis(phylo, subset_meta_arrange$time_point, perm=999)
-pairwise%>%
-  tt()
 ```
 
 ***dbRDA***
@@ -799,7 +757,7 @@ element_gift %>%
     filter(p_adjust < 0.05)
 ```
 
-### Differential abundance analysis: composition
+#### Differential abundance analysis: composition
 ```{r phylo_acclim_wild_warm, comment="", message=FALSE, warning=FALSE, eval=FALSE}
 phylo_samples_warm <- sample_metadata %>%
   filter(Population == "Hot_dry" & time_point %in% c("Wild", "Acclimation") )%>% 
@@ -927,7 +885,7 @@ ancombc_rand_table_mag%>%
   arrange(desc(sample_count))
 ```
 
-### Differences in the functional capacity
+#### Differences in the functional capacity
 ```{r gift_acclim_antib_wild_accli_warm, comment="", message=FALSE, warning=FALSE}
 GIFTs_elements <- to.elements(genome_gifts,GIFT_db)
 GIFTs_elements_filtered <- GIFTs_elements[rownames(GIFTs_elements) %in% genome_counts_filt$genome,]
@@ -951,7 +909,7 @@ GIFTs_functions_community <- to.community(GIFTs_functions,genome_counts_row,GIFT
 GIFTs_domains_community <- to.community(GIFTs_domains,genome_counts_row,GIFT_db)
 ```
 
-#### Community elements differences:
+##### Community elements differences:
 
 ***MCI***
 ```{r gitfs_elem_accli_wild_warm, comment="", message=FALSE, warning=FALSE}
@@ -1038,7 +996,7 @@ difference_table %>%
   labs(fill="Treatment")
 ```
 
-#### Community functions differences
+##### Community functions differences
 
 ***MCI***
 ```{r gitfs_accli_wild_warm, message=FALSE, warning=FALSE}

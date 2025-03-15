@@ -1,6 +1,6 @@
-## Are the microbial communities similar in both donor samples?
+# Are the microbial communities similar in both donor samples?
 
-### Alpha diversity
+## Alpha diversity
 
 ```{r filter_data_donor, comment="", message=FALSE, warning=FALSE}
 alpha_div_meta <- alpha_div %>%
@@ -68,7 +68,7 @@ Model_phylo <-  nlme::lme(fixed = phylogenetic ~ time_point, data = alpha_div_me
 summary(Model_phylo)
 ```
 
-### Beta diversity
+## Beta diversity
 
 ***Richness***
 ```{r permanova_richness2_donor, comment="", message=FALSE, warning=FALSE}
@@ -120,7 +120,7 @@ adonis2(phylo ~ treatment,
         tt()
 ```
 
-## Does the donor sample maintain the microbial community found in acclimation?
+# Does the donor sample maintain the microbial community found in acclimation?
 
 ```{r filter_data_donor2, comment="", message=FALSE, warning=FALSE}
 sample_metadata <- sample_metadata %>%
@@ -148,7 +148,7 @@ subset_meta <- sample_metadata %>%
   filter(type == "Hot_control" & treatment %in% c("Acclimation","Transplant"))
 ```
 
-### Alpha diversity
+## Alpha diversity
 
 ```{r alpha_div_plot_002, comment="", message=FALSE, warning=FALSE}
 alpha_div %>%
@@ -202,7 +202,7 @@ summary(Model_phylo)
 ```
 
 
-### Beta diversity
+## Beta diversity
 ***Richness***
 ```{r permanova_richness3, comment="", message=FALSE, warning=FALSE}
 richness <- as.matrix(beta_q0n$S)
@@ -336,8 +336,7 @@ p2<-phylo %>%
 ggarrange(p0, p1, p2, ncol=3, nrow=1, common.legend = TRUE, legend="right")
 ```
 
-
-## Is the donor sample microbiota different to recipient microbiota?
+# Is the donor sample microbiota different to recipient microbiota?
 
 ```{r filter_data4, comment="", message=FALSE, warning=FALSE}
 samples_to_keep <- sample_metadata %>%
@@ -348,7 +347,7 @@ subset_meta <- sample_metadata %>%
   filter(type == "Treatment" & treatment %in% c("Acclimation", "Transplant"))
 ```
 
-### Alpha diversity
+## Alpha diversity
 
 ```{r filter_data_donor3, comment="", message=FALSE, warning=FALSE}
 sample_metadata <- sample_metadata %>%
@@ -413,7 +412,7 @@ Model_phylo <- nlme::lme(fixed = phylogenetic ~ treatment, data = alpha_div_meta
 summary(Model_phylo)
 ```
 
-### Beta diversity
+## Beta diversity
 ***Richness***
 ```{r permanova_richness4, comment="", message=FALSE, warning=FALSE}
 richness <- as.matrix(beta_q0n$S)

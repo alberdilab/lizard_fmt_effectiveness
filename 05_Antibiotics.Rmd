@@ -1,11 +1,11 @@
-## Does the antibiotic administration change the microbial community?
+# Does the antibiotic administration change the microbial community?
 ```{r filter_data, comment="", message=FALSE, warning=FALSE}
 alpha_div_meta <- alpha_div %>%
   left_join(sample_metadata, by = join_by(sample == sample))%>%
   filter(time_point %in% c("Acclimation", "Antibiotics") ) 
 ```
 
-### Alpha diversity
+## Alpha diversity
 ```{r alpha_div_plot_1, comment="", message=FALSE, warning=FALSE}
 label_map <- c(
   "Cold_wet" = "Cold population", 
@@ -50,8 +50,6 @@ alpha_div %>%
 ```{r LMM, comment="", message=FALSE, warning=FALSE}
 Modelq0GLMMNB <- glmer.nb(richness ~ time_point*Population+(1|individual), data = alpha_div_meta)
 summary(Modelq0GLMMNB)
-emmeans::emmeans(Modelq0GLMMNB, pairwise ~ time_point)
-emmeans::emmeans(Modelq0GLMMNB, pairwise ~ Population)
 ```
 
 ***Neutral***
@@ -59,8 +57,6 @@ emmeans::emmeans(Modelq0GLMMNB, pairwise ~ Population)
 Model_neutral <- nlme::lme(fixed = neutral ~ time_point*Population, data = alpha_div_meta,
                random = ~ 1 | individual)
 summary(Model_neutral)
-emmeans::emmeans(Model_neutral, pairwise ~ time_point)
-emmeans::emmeans(Model_neutral, pairwise ~ Population)
 ```
 
 ***Phylogenetic***
@@ -68,11 +64,9 @@ emmeans::emmeans(Model_neutral, pairwise ~ Population)
 Model_phylo <- nlme::lme(fixed = phylogenetic ~ time_point*Population, data = alpha_div_meta,
                random = ~ 1 | individual)
 summary(Model_phylo)
-emmeans::emmeans(Model_neutral, pairwise ~ time_point)
-emmeans::emmeans(Model_neutral, pairwise ~ Population)
 ```
 
-### Beta diversity
+## Beta diversity
 ```{r filter_data1, comment="", message=FALSE, warning=FALSE}
 samples_to_keep <- sample_metadata %>%
   filter(time_point %in% c("Acclimation", "Antibiotics")) %>% 
@@ -101,18 +95,6 @@ adonis2(richness ~ time_point*Population,
         tt()
 ```
 
-```{r permanova_richness_antib, comment="", message=FALSE, warning=FALSE}
-subset_meta_arrange <- column_to_rownames(subset_meta, "Tube_code")
-subset_meta_arrange<-subset_meta_arrange[labels(richness),]
-
-pairwise <- pairwise.adonis(richness, subset_meta_arrange$Population, perm=999)
-pairwise%>%
-  tt()
-pairwise <- pairwise.adonis(richness, subset_meta_arrange$time_point, perm=999)
-pairwise%>%
-  tt()
-```
-
 ***Neutral***
 ```{r permanova_neutral, comment="", message=FALSE, warning=FALSE}
 neutral <- as.matrix(beta_q1n$S)
@@ -132,18 +114,6 @@ adonis2(neutral ~ time_point*Population,
         tt()
 ```
 
-```{r permanova_neutral_antib, comment="", message=FALSE, warning=FALSE}
-subset_meta_arrange <- column_to_rownames(subset_meta, "Tube_code")
-subset_meta_arrange<-subset_meta_arrange[labels(neutral),]
-
-pairwise <- pairwise.adonis(neutral, subset_meta_arrange$Population, perm=999)
-pairwise%>%
-  tt()
-pairwise <- pairwise.adonis(neutral, subset_meta_arrange$time_point, perm=999)
-pairwise%>%
-  tt()
-```
-
 ***Phylogenetic***
 ```{r permanova_phylo, comment="", message=FALSE, warning=FALSE}
 phylo <- as.matrix(beta_q1p$S)
@@ -160,18 +130,6 @@ adonis2(phylo ~ time_point*Population,
         by="terms") %>%
         broom::tidy() %>%
         tt()
-```
-
-```{r permanova_phylo_antib, comment="", message=FALSE, warning=FALSE}
-subset_meta_arrange <- column_to_rownames(subset_meta, "Tube_code")
-subset_meta_arrange<-subset_meta_arrange[labels(phylo),]
-
-pairwise <- pairwise.adonis(phylo, subset_meta_arrange$Population, perm=999)
-pairwise%>%
-  tt()
-pairwise <- pairwise.adonis(phylo, subset_meta_arrange$time_point, perm=999)
-pairwise%>%
-  tt()
 ```
 
 ***dbRDA***
@@ -1108,9 +1066,9 @@ difference_table%>%
   tt() 
 ```
 
-## Does antibiotic administration remove the differences found in the two populations?
+# Does antibiotic administration remove the differences found in the two populations?
 
-### Shapiro test
+## Shapiro test
 
 ```{r shapiro_antib_1, comment="", message=FALSE, warning=FALSE}
 alpha_div %>%
@@ -1139,7 +1097,7 @@ alpha_div %>%
 ```
 
 
-### Alpha diversity
+## Alpha diversity
 ```{r filter_data01, comment="", message=FALSE, warning=FALSE}
 alpha_div_meta <- alpha_div %>%
   left_join(sample_metadata, by = join_by(sample == sample))%>%
@@ -1215,7 +1173,7 @@ alpha_div %>%
   ylab("Alpha diversity")
 ```
 
-### Beta diversity
+## Beta diversity
 ```{r data_filter1, comment="", message=FALSE, warning=FALSE}
 samples_to_keep <- sample_metadata %>%
   filter(time_point == "Antibiotics") %>% 
@@ -1272,4 +1230,70 @@ adonis2(phylo ~ Population,
         permutations = 999) %>%
         broom::tidy() %>%
         tt()
+```
+
+```{r betad_div_plot, comment="", message=FALSE, warning=FALSE}
+p0 <- richness %>%
+                metaMDS(.,trymax = 500, k=2, verbosity=FALSE, trace=FALSE) %>%
+                vegan::scores() %>%
+                as_tibble(., rownames = "sample") %>%
+                left_join(subset_meta, by = join_by(sample == Tube_code)) %>%
+            group_by(Population, time_point) %>%
+            mutate(x_cen = mean(NMDS1, na.rm = TRUE)) %>%
+            mutate(y_cen = mean(NMDS2, na.rm = TRUE)) %>%
+            ungroup() %>%
+            ggplot(., aes(x=NMDS1,y=NMDS2, color=Population, shape=time_point)) +
+                scale_color_manual(name="Population",
+                    breaks=c("Cold_wet","Hot_dry"),
+                    labels=c("Cold","Hot"),
+                    values=c('#008080',"#d57d2c")) +
+                geom_point(size=2) +
+                geom_segment(aes(x=x_cen, y=y_cen, xend=NMDS1, yend=NMDS2), alpha=0.2) +
+        labs(y = "NMDS2", x="NMDS1 \n Richness beta diversity") +
+                theme_classic() +
+                theme(legend.position="none")
+
+p1 <- neutral %>%
+                metaMDS(.,trymax = 500, k=2, verbosity=FALSE, trace=FALSE) %>%
+                vegan::scores() %>%
+                as_tibble(., rownames = "sample") %>%
+                left_join(subset_meta, by = join_by(sample == Tube_code))%>%
+            group_by(Population, time_point) %>%
+            mutate(x_cen = mean(NMDS1, na.rm = TRUE)) %>%
+            mutate(y_cen = mean(NMDS2, na.rm = TRUE)) %>%
+            ungroup() %>%
+            ggplot(., aes(x=NMDS1,y=NMDS2, color=Population, shape=time_point)) +
+                scale_color_manual(name="Population",
+                    breaks=c("Cold_wet","Hot_dry"),
+                    labels=c("Cold","Hot"),
+                    values=c('#008080',"#d57d2c")) +
+                geom_point(size=2) +
+                geom_segment(aes(x=x_cen, y=y_cen, xend=NMDS1, yend=NMDS2), alpha=0.2) +
+        labs(y = "NMDS2", x="NMDS1 \n Neutral beta diversity") +
+                theme_classic() +
+                theme(legend.position="none")
+
+p2<- phylo %>%
+                metaMDS(.,trymax = 500, k=2, verbosity=FALSE, trace=FALSE) %>%
+                vegan::scores() %>%
+                as_tibble(., rownames = "sample") %>%
+                left_join(subset_meta, by = join_by(sample == Tube_code))%>%
+            group_by(Population,time_point) %>%
+            mutate(x_cen = mean(NMDS1, na.rm = TRUE)) %>%
+            mutate(y_cen = mean(NMDS2, na.rm = TRUE)) %>%
+            ungroup() %>%
+            ggplot(., aes(x=NMDS1,y=NMDS2, color=Population, shape=time_point)) +
+                scale_color_manual(name="Population",
+                    breaks=c("Cold_wet","Hot_dry"),
+                    labels=c("Cold","Hot"),
+                    values=c('#008080',"#d57d2c")) +
+                geom_point(size=2) +
+                geom_segment(aes(x=x_cen, y=y_cen, xend=NMDS1, yend=NMDS2), alpha=0.2) +
+        labs(y= element_blank (),x="NMDS1 \n Phylogenetic beta diversity") +
+                theme_classic() +
+                theme(legend.position="none") 
+```
+
+```{r beta_antib_nmds_plot_final, fig.height=8, fig.width=12, fig.fullwidth=TRUE}
+ggarrange(p0, p1, p2, ncol=3, nrow=1, common.legend = TRUE, legend="right")
 ```

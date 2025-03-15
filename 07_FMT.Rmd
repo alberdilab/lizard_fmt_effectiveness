@@ -1,4 +1,4 @@
-## Does FMT change the microbial community over time?
+# Does FMT change the microbial community over time?
 
 ```{r filter_data5, comment="", message=FALSE, warning=FALSE}
 alpha_div_meta <- alpha_div %>%
@@ -6,7 +6,7 @@ alpha_div_meta <- alpha_div %>%
   filter(type == "Treatment" & treatment %in% c("FMT1","FMT2") ) 
 ```
 
-### Alpha diversity
+## Alpha diversity
 
 ```{r alpha_div_plot_5, comment="", message=FALSE, warning=FALSE}
 alpha_div %>%
@@ -56,7 +56,7 @@ Model_phylo <- nlme::lme(fixed = phylogenetic ~ treatment, data = alpha_div_meta
 summary(Model_phylo)
 ```
 
-### Beta diversity
+## Beta diversity
 
 ```{r filter_data_beta5, comment="", message=FALSE, warning=FALSE}
 samples_to_keep <- sample_metadata %>%
@@ -201,7 +201,7 @@ ggarrange(p0, p1, p2, ncol=3, nrow=1, common.legend = TRUE, legend="right")
 ```
 
 
-## Do FMT change the microbial community compared to antibiotics and acclimation?
+# Do FMT change the microbial community compared to antibiotics and acclimation?
 
 ```{r filter_data6, comment="", message=FALSE, warning=FALSE}
 alpha_div_meta <- alpha_div %>%
@@ -209,7 +209,7 @@ alpha_div_meta <- alpha_div %>%
   filter(type == "Treatment" & treatment %in% c("Antibiotics", "Acclimation","FMT1") ) 
 ```
 
-### Alpha diversity
+## Alpha diversity
 
 ```{r alpha_div_plot_6, comment="", message=FALSE, warning=FALSE}
 alpha_div %>%
@@ -262,7 +262,7 @@ Model_phylo <- lme(fixed = phylogenetic ~ treatment, data = alpha_div_meta,
 summary(Model_phylo)
 ```
 
-### Beta diversity
+## Beta diversity
 
 ```{r filter_data_beta6, comment="", message=FALSE, warning=FALSE}
 samples_to_keep <- sample_metadata %>%
@@ -415,7 +415,7 @@ p2<-phylo %>%
 ggarrange(p0, p1, p2, ncol=3, nrow=1, common.legend = TRUE, legend="right")
 ```
 
-## Is the gut microbiota similar to the donor after FMT?
+# Is the gut microbiota similar to the donor after FMT?
 
 ```{r filter_Data7, comment="", message=FALSE, warning=FALSE}
 sample_metadata <- sample_metadata %>%
@@ -434,7 +434,7 @@ subset_meta <- sample_metadata %>%
 ```
 
 
-### Alpha diversity
+## Alpha diversity
 
 ```{r alpha_div_plot_7, comment="", message=FALSE, warning=FALSE}
 alpha_div %>%
@@ -488,7 +488,7 @@ summary(Model_phylo)
 ```
 
 
-### Beta diversity
+## Beta diversity
 
 ***Richness***
 ```{r permanova_rich7, comment="", message=FALSE, warning=FALSE}
@@ -624,7 +624,7 @@ ggarrange(p0, p1, p2, ncol=3, nrow=1, common.legend = TRUE, legend="right")
 ```
 
 
-### Structural zeros
+## Structural zeros
 
 ```{r struct_zero_fmt_tranp, comment="", message=FALSE, warning=FALSE}
 FMT_samples <- sample_metadata %>%
@@ -709,7 +709,7 @@ structural_zeros %>%
 
 ```
 
-#### Functional capacities of the structural zeros
+### Functional capacities of the structural zeros
 ```{r gift_struc_fmt_tranp, comment="", message=FALSE, warning=FALSE}
 #Aggregate bundle-level GIFTs into the compound level
 GIFTs_elements <- to.elements(genome_gifts,GIFT_db)
@@ -811,7 +811,7 @@ difference_table %>%
 ```
 
 
-### Differential abundance analysis: composition
+## Differential abundance analysis: composition
 ```{r phyloseq_fmt_tranp, comment="", message=FALSE, warning=FALSE}
 phylo_samples <- sample_metadata %>%
     mutate(treatment=case_when(
@@ -952,7 +952,7 @@ ggplot(., aes(x=lfc_treatmentTransplant, y=forcats::fct_reorder(genome,lfc_treat
   guides(fill=guide_legend(title="Phylum"))
 ```
 
-### Differences in the functional capacities
+## Differences in the functional capacities
 
 ```{r gift_all, comment="", message=FALSE, warning=FALSE}
 GIFTs_elements <- to.elements(genome_gifts,GIFT_db)
@@ -979,7 +979,7 @@ GIFTs_functions_community <- to.community(GIFTs_functions,genome_counts_row,GIFT
 GIFTs_domains_community <- to.community(GIFTs_domains,genome_counts_row,GIFT_db)
 ```
 
-#### Community elements differences:
+### Community elements differences:
 
 ***MCI***
 ```{r gitfs_elem_fmt_tran, comment="", message=FALSE, warning=FALSE}
@@ -1099,7 +1099,8 @@ log_fold %>%
   ylab("Log_fold")+
   labs(fill="Treatment")
 ```
-#### Community functions differences
+
+### Community functions differences
 
 ***MCI***
 ```{r gitfs_func_fmt_tran, comment="", message=FALSE, warning=FALSE}
