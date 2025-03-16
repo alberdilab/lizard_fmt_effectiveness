@@ -402,11 +402,11 @@ ancom_rand_output = ancombc2(data = physeq_genome_filtered,
 
 ```{r save_ancombc1, warning=FALSE, comments="", message=FALSE, eval=FALSE}
 save(ancom_rand_output, 
-     file = "data/ancombc_antib_accl.Rdata")
+     file = "data/ancombc_antib_accl_1203.Rdata")
 ```
 
 ```{r load_ancombc, warning=FALSE, comments="", message=FALSE}
-load("data/ancombc_antib_accl.Rdata")
+load("data/ancombc_antib_accl_1203.Rdata")
 ```
 
 ```{r ancom_rand1, comment="", message=FALSE, warning=FALSE}
@@ -415,12 +415,12 @@ taxonomy <- data.frame(physeq_genome_filtered@tax_table) %>%
   mutate_at(vars(order, phylum, family, genus, species), ~ str_replace(., "[dpcofgs]__", ""))
 
 ancombc_rand_table_mag <- ancom_rand_output$res %>%
-  dplyr::select(taxon, lfc_time_point2_Antibiotics, p_time_point2_Antibiotics) %>%
-  filter(p_time_point2_Antibiotics < 0.05) %>%
-  dplyr::arrange(p_time_point2_Antibiotics) %>%
+  dplyr::select(taxon, lfc_time_pointAntibiotics, p_time_pointAntibiotics) %>%
+  filter(p_time_pointAntibiotics < 0.05) %>%
+  dplyr::arrange(p_time_pointAntibiotics) %>%
   merge(., taxonomy, by="taxon") %>%
   mutate_at(vars(phylum, species), ~ str_replace(., "[dpcofgs]__", ""))%>%
-  dplyr::arrange(lfc_time_point2_Antibiotics)
+  dplyr::arrange(lfc_time_pointAntibiotics)
 
 colors_alphabetic <- read_tsv("https://raw.githubusercontent.com/earthhologenome/EHI_taxonomy_colour/main/ehi_phylum_colors.tsv") %>%
   mutate_at(vars(phylum), ~ str_replace(., "[dpcofgs]__", ""))  %>%
@@ -441,7 +441,7 @@ tax_color <- merge(tax_table, colors_alphabetic, by="phylum")%>%
 ```{r ancombc_rand_plot_phy1, comment="", message=FALSE, warning=FALSE, fig.height=10, fig.width=8, fig.fullwidth=TRUE}
 ancombc_rand_table_mag%>%
       mutate(genome=factor(taxon,levels=ancombc_rand_table_mag$taxon)) %>%
-ggplot(., aes(x=lfc_time_point2_Antibiotics, y=forcats::fct_reorder(genome,lfc_time_point2_Antibiotics), fill=phylum)) + #forcats::fct_rev()
+ggplot(., aes(x=lfc_time_pointAntibiotics, y=forcats::fct_reorder(genome,lfc_time_pointAntibiotics), fill=phylum)) + #forcats::fct_rev()
   geom_col() + 
   scale_fill_manual(values=tax_color) + 
   geom_hline(yintercept=0) + 
@@ -462,16 +462,16 @@ ggplot(., aes(x=lfc_time_point2_Antibiotics, y=forcats::fct_reorder(genome,lfc_t
 ***Phyla of the significant MAGs***
 ```{r acclim_sign_features, comment="", message=FALSE, warning=FALSE}
 ancombc_rand_table_mag%>%
-  filter(lfc_time_point2_Antibiotics<0)  %>% 
+  filter(lfc_time_pointAntibiotics<0)  %>% 
   count(phylum, name = "sample_count") %>%
   arrange(desc(sample_count))  
 
 ancombc_rand_table_mag%>%
-  filter(lfc_time_point2_Antibiotics<0)  %>% 
+  filter(lfc_time_pointAntibiotics<0)  %>% 
   select(phylum, genus, species)
 
 ancombc_rand_table_mag%>%
-  filter(lfc_time_point2_Antibiotics<0)  %>% 
+  filter(lfc_time_pointAntibiotics<0)  %>% 
   count(genus, name = "sample_count") %>%
   arrange(desc(sample_count))
 ```
@@ -676,8 +676,12 @@ antibiotics_samples <- sample_metadata %>%
   filter(Population == "Hot_dry" & time_point == "Antibiotics") %>% 
   dplyr::select(sample) %>% pull()
 
+
+sample_sub <- sample_metadata %>%
+  filter(Population == "Hot_dry" & treatment %in% c("Acclimation", "Antibiotics"))
+
 structural_zeros <- genome_counts_filt %>% 
-  select(one_of(c("genome",subset_meta$sample))) %>%
+  select(one_of(c("genome",sample_sub$sample))) %>%
   filter(rowSums(across(where(is.numeric), ~ . != 0)) > 0) %>%
   select(genome, where(~ is.numeric(.) && sum(.) > 0)) %>% 
    rowwise() %>% #compute for each row (genome)
@@ -719,9 +723,6 @@ GIFTs_elements <- to.elements(genome_gifts,GIFT_db)
 GIFTs_elements_filtered <- GIFTs_elements[rownames(GIFTs_elements) %in% structural_zeros$genome,]
 GIFTs_elements_filtered <- as.data.frame(GIFTs_elements_filtered) %>% 
   select_if(~ !is.numeric(.) || sum(.) != 0)
-
-sample_sub <- sample_metadata %>%
-  filter(Population == "Hot_dry" & treatment %in% c("Acclimation", "Antibiotics"))
 
 genome_counts_row <- genome_counts_filt %>%
   mutate_at(vars(-genome),~./sum(.)) %>% 
@@ -774,6 +775,7 @@ phylo_taxonomy <- genome_metadata %>%
 
 physeq_genome_filtered <- phyloseq(phylo_genome, phylo_taxonomy, phylo_samples)
 ```
+
 ```{r ancom_rand_accl_ant_warm, comment="", message=FALSE, warning=FALSE, eval=FALSE}
 ancom_rand_output = ancombc2(data = physeq_genome_filtered, 
                   assay_name = "counts", 
@@ -805,25 +807,25 @@ ancom_rand_output = ancombc2(data = physeq_genome_filtered,
 
 ```{r save_ancombc1_warm, warning=FALSE, comments="", message=FALSE, eval=FALSE}
 save(ancom_rand_output, 
-     file = "data/ancombc_antib_accl_warm.Rdata")
+     file = "data/ancombc_antib_accl_warm_1203.Rdata")
 ```
 
-```{r load_ancombc_warm, warning=FALSE, comments="", message=FALSE, eval=FALSE}
-load("data/ancombc_antib_accl_warm.Rdata")
+```{r load_ancombc_warm, warning=FALSE, comments="", message=FALSE}
+load("data/ancombc_antib_accl_warm_1203.Rdata")
 ```
 
-```{r ancom_rand1_warm, comment="", message=FALSE, warning=FALSE, eval=FALSE}
+```{r ancom_rand1_warm, comment="", message=FALSE, warning=FALSE}
 taxonomy <- data.frame(physeq_genome_filtered@tax_table) %>%
   rownames_to_column(., "taxon") %>%
   mutate_at(vars(order, phylum, family, genus, species), ~ str_replace(., "[dpcofgs]__", ""))
 
 ancombc_rand_table_mag <- ancom_rand_output$res %>%
-  dplyr::select(taxon, lfc_time_point2_Antibiotics, p_time_point2_Antibiotics) %>%
-  filter(p_time_point2_Antibiotics < 0.05) %>%
-  dplyr::arrange(p_time_point2_Antibiotics) %>%
+  dplyr::select(taxon, lfc_time_pointAntibiotics, p_time_pointAntibiotics) %>%
+  filter(p_time_pointAntibiotics < 0.05) %>%
+  dplyr::arrange(p_time_pointAntibiotics) %>%
   merge(., taxonomy, by="taxon") %>%
   mutate_at(vars(phylum, species), ~ str_replace(., "[dpcofgs]__", ""))%>%
-  dplyr::arrange(lfc_time_point2_Antibiotics)
+  dplyr::arrange(lfc_time_pointAntibiotics)
 
 colors_alphabetic <- read_tsv("https://raw.githubusercontent.com/earthhologenome/EHI_taxonomy_colour/main/ehi_phylum_colors.tsv") %>%
   mutate_at(vars(phylum), ~ str_replace(., "[dpcofgs]__", ""))  %>%
@@ -841,14 +843,13 @@ tax_color <- merge(tax_table, colors_alphabetic, by="phylum")%>%
 	dplyr::select(colors) %>%
 	pull()
 ```
-```{r ancombc_rand_plot_phy1_warm, comment="", message=FALSE, warning=FALSE, fig.height=10, fig.width=8, fig.fullwidth=TRUE, eval=FALSE}
+```{r ancombc_rand_plot_phy1_warm, comment="", message=FALSE, warning=FALSE, fig.height=10, fig.width=8, fig.fullwidth=TRUE}
 ancombc_rand_table_mag%>%
       mutate(genome=factor(taxon,levels=ancombc_rand_table_mag$taxon)) %>%
-ggplot(., aes(x=lfc_time_point2_Antibiotics, y=forcats::fct_reorder(genome,lfc_time_point2_Antibiotics), fill=phylum)) + #forcats::fct_rev()
+ggplot(., aes(x=lfc_time_pointAntibiotics, y=forcats::fct_reorder(genome,lfc_time_pointAntibiotics), fill=phylum)) + 
   geom_col() + 
   scale_fill_manual(values=tax_color) + 
   geom_hline(yintercept=0) + 
-#  coord_flip()+
   theme(panel.background = element_blank(),
         axis.line = element_line(size = 0.5, linetype = "solid", colour = "black"),
         axis.text.x = element_text(size = 12),
@@ -863,18 +864,18 @@ ggplot(., aes(x=lfc_time_point2_Antibiotics, y=forcats::fct_reorder(genome,lfc_t
 ```
 
 ***Phyla of the significant MAGs***
-```{r acclim_sign_features_warm, comment="", message=FALSE, warning=FALSE, eval=FALSE}
+```{r acclim_sign_features_warm, comment="", message=FALSE, warning=FALSE}
 ancombc_rand_table_mag%>%
-  filter(lfc_time_point2_Antibiotics<0)  %>% 
+  filter(lfc_time_pointAntibiotics<0)  %>% 
   count(phylum, name = "sample_count") %>%
   arrange(desc(sample_count))  
 
 ancombc_rand_table_mag%>%
-  filter(lfc_time_point2_Antibiotics<0)  %>% 
+  filter(lfc_time_pointAntibiotics<0)  %>% 
   select(phylum, genus, species)
 
 ancombc_rand_table_mag%>%
-  filter(lfc_time_point2_Antibiotics<0)  %>% 
+  filter(lfc_time_pointAntibiotics<0)  %>% 
   count(genus, name = "sample_count") %>%
   arrange(desc(sample_count))
 ```

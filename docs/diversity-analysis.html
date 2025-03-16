@@ -2168,7 +2168,6 @@ color: #a52929;
 <li class="chapter" data-level="13.5" data-path="is-the-gut-microbiota-similar-to-the-donor-after-fmt.html"><a href="is-the-gut-microbiota-similar-to-the-donor-after-fmt.html#differences-in-the-functional-capacities"><i class="fa fa-check"></i><b>13.5</b> Differences in the functional capacities</a>
 <ul>
 <li class="chapter" data-level="13.5.1" data-path="is-the-gut-microbiota-similar-to-the-donor-after-fmt.html"><a href="is-the-gut-microbiota-similar-to-the-donor-after-fmt.html#community-elements-differences-4"><i class="fa fa-check"></i><b>13.5.1</b> Community elements differences:</a></li>
-<li class="chapter" data-level="13.5.2" data-path="is-the-gut-microbiota-similar-to-the-donor-after-fmt.html"><a href="is-the-gut-microbiota-similar-to-the-donor-after-fmt.html#community-functions-differences-4"><i class="fa fa-check"></i><b>13.5.2</b> Community functions differences</a></li>
 </ul></li>
 </ul></li>
 <li class="divider"></li>
@@ -2197,7 +2196,8 @@ color: #a52929;
 <h1><span class="header-section-number">Chapter 4</span> Diversity analysis<a href="diversity-analysis.html#diversity-analysis" class="anchor-section" aria-label="Anchor link to header"></a></h1>
 <div class="sourceCode" id="cb38"><pre class="sourceCode r script-source"><code class="sourceCode r"><span id="cb38-1"><a href="diversity-analysis.html#cb38-1" tabindex="-1"></a><span class="fu">load</span>(<span class="st">&quot;data/08032025data.Rdata&quot;</span>)</span>
 <span id="cb38-2"><a href="diversity-analysis.html#cb38-2" tabindex="-1"></a><span class="fu">load</span>(<span class="st">&quot;data/04032025gifts.Rdata&quot;</span>)</span>
-<span id="cb38-3"><a href="diversity-analysis.html#cb38-3" tabindex="-1"></a><span class="fu">load</span>(<span class="st">&quot;data/beta_08032025.Rdata&quot;</span>)</span></code></pre></div>
+<span id="cb38-3"><a href="diversity-analysis.html#cb38-3" tabindex="-1"></a><span class="fu">load</span>(<span class="st">&quot;data/beta_08032025.Rdata&quot;</span>)</span>
+<span id="cb38-4"><a href="diversity-analysis.html#cb38-4" tabindex="-1"></a><span class="fu">load</span>(<span class="st">&quot;data/alpha_08032025.Rdata&quot;</span>)</span></code></pre></div>
 <div class="sourceCode" id="cb39"><pre class="sourceCode r script-source"><code class="sourceCode r"><span id="cb39-1"><a href="diversity-analysis.html#cb39-1" tabindex="-1"></a>genome_counts_filt <span class="ot">&lt;-</span> genome_counts_filt <span class="sc">%&gt;%</span> </span>
 <span id="cb39-2"><a href="diversity-analysis.html#cb39-2" tabindex="-1"></a>  <span class="fu">column_to_rownames</span>(<span class="at">var =</span> <span class="st">&quot;genome&quot;</span>) <span class="sc">%&gt;%</span></span>
 <span id="cb39-3"><a href="diversity-analysis.html#cb39-3" tabindex="-1"></a>  <span class="fu">filter</span>(<span class="fu">rowSums</span>(. <span class="sc">!=</span> <span class="dv">0</span>, <span class="at">na.rm =</span> <span class="cn">TRUE</span>) <span class="sc">&gt;</span> <span class="dv">0</span>)<span class="sc">%&gt;%</span> </span>

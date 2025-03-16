@@ -840,7 +840,7 @@ physeq_genome_filtered <- phyloseq(phylo_genome, phylo_taxonomy, phylo_samples)
 
 
 ```{r ancom_rand_fmt_tranp, comment="", message=FALSE, warning=FALSE, eval=FALSE}
-ancom_rand_output = ancombc2(data = physeq_genome_filtered, 
+ancombc_FMT_transplant_1203 = ancombc2(data = physeq_genome_filtered, 
                   assay_name = "counts", 
                   tax_level = NULL,
                   fix_formula = "treatment",
@@ -849,8 +849,8 @@ ancom_rand_output = ancombc2(data = physeq_genome_filtered,
                   prv_cut =0, 
                   lib_cut = 0, 
                   s0_perc = 0.05,
-                  group = NULL, 
-                  struc_zero = FALSE, 
+                  group = "treatment", 
+                  struc_zero = TRUE, 
                   neg_lb = FALSE,
                   alpha = 0.05, 
                   n_cl = 2, 
@@ -868,11 +868,11 @@ ancom_rand_output = ancombc2(data = physeq_genome_filtered,
 ```
 
 ```{r save_ancombc_fmt_tranp, warning=FALSE, comments="", message=FALSE, eval=FALSE}
-save(ancom_rand_output, file = "data/ancombc_FMT_transplant.Rdata")
+save(ancombc_FMT_transplant_1203, file = "data/ancombc_FMT_transplant_1203.Rdata")
 ```
 
 ```{r load_ancombc_fmt_tranp, warning=FALSE, comments="", message=FALSE}
-load("data/ancombc_FMT_transplant.Rdata")
+load("data/ancombc_FMT_transplant_1203.Rdata")
 ```
 
 ```{r ancom_rand, comment="", message=FALSE, warning=FALSE}
@@ -880,7 +880,7 @@ taxonomy <- data.frame(physeq_genome_filtered@tax_table) %>%
   rownames_to_column(., "taxon") %>%
   mutate_at(vars(order, phylum, family, genus, species), ~ str_replace(., "[dpcofgs]__", ""))
 
-ancombc_rand_table_mag <- ancom_rand_output$res %>%
+ancombc_rand_table_mag <- ancombc_FMT_transplant_1203$res %>%
   dplyr::select(taxon, lfc_treatmentTransplant, p_treatmentTransplant) %>%
   filter(p_treatmentTransplant < 0.05) %>%
   dplyr::arrange(p_treatmentTransplant) %>%
@@ -1063,7 +1063,7 @@ log_fold <- means_gift %>%
   left_join(., difference_table, by="Elements")
 ```
 
-```{r commun_log_elem_plot_FMt_tran, comment="", message=FALSE, warning=FALSE, fig.height=6, fig.width=12, fig.fullwidth=TRUE, eval=TRUE}
+```{r commun_log_elem_plot_FMt_tran, comment="", message=FALSE, warning=FALSE, fig.height=6, fig.width=12, fig.fullwidth=TRUE}
 difference_table %>%
   ggplot(aes(x=forcats::fct_reorder(Function,Difference), y=Difference, fill=group_color)) + 
   geom_col() +
@@ -1081,7 +1081,7 @@ difference_table %>%
   ylab("Mean difference")+
   labs(fill="Treatment")
 ```
-```{r commun_wilcox_elem_plot_FMt_tran, comment="", message=FALSE, warning=FALSE, fig.height=6, fig.width=12, fig.fullwidth=TRUE, eval=TRUE}
+```{r commun_wilcox_elem_plot_FMt_tran, comment="", message=FALSE, warning=FALSE, fig.height=6, fig.width=12, fig.fullwidth=TRUE}
 log_fold %>%
   filter(Elements!="D0611") %>% 
   ggplot(aes(x=forcats::fct_reorder(Function,logfc_fmt_transplant), y=logfc_fmt_transplant, fill=group_color)) + 
@@ -1100,7 +1100,7 @@ log_fold %>%
   labs(fill="Treatment")
 ```
 
-### Community functions differences
+#### Community functions differences
 
 ***MCI***
 ```{r gitfs_func_fmt_tran, comment="", message=FALSE, warning=FALSE}

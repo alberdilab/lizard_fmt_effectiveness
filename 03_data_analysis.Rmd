@@ -10,6 +10,7 @@ set.seed(1802)
 load("data/08032025data.Rdata")
 load("data/04032025gifts.Rdata")
 load("data/beta_08032025.Rdata")
+load("data/alpha_08032025.Rdata")
 ```
 
 ```{r data, comment="", message=FALSE, warning=FALSE}
@@ -69,7 +70,7 @@ genome_metadata <- genome_metadata %>%
 
 ### Alpha diversity
 
-```{r alpha_div, comment="", message=FALSE, warning=FALSE}
+```{r alpha_div, comment="", message=FALSE, warning=FALSE, eval=FALSE}
 # Calculate Hill numbers
 richness <- genome_counts_filt %>%
   column_to_rownames(var = "genome") %>%
