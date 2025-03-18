@@ -467,10 +467,9 @@ alpha_div %>%
 ```
 
 ***Richness***
-```{r LMM_rich7, comment="", message=FALSE, warning=FALSE, eval=FALSE}
+```{r LMM_rich7, comment="", message=FALSE, warning=FALSE}
 Modelq0GLMMNB <- glmer.nb(richness ~ treatment+(1|individual), data = alpha_div_meta)
 summary(Modelq0GLMMNB)
-emmeans::emmeans(Modelq0GLMMNB, pairwise ~ treatment)
 ```
 
 ***Neutral***
