@@ -892,7 +892,7 @@ GIFTs_functions <- to.functions(GIFTs_elements_filtered,GIFT_db)
 GIFTs_domains <- to.domains(GIFTs_functions,GIFT_db)
 
 sample_sub <- sample_metadata %>%
-  filter(Population == "Cold_wet" & treatment %in% c("Acclimation", "Antibiotics"))
+  filter(Population == "Hot_dry" & treatment %in% c("Acclimation", "Antibiotics"))
 
 genome_counts_row <- genome_counts_filt %>%
   mutate_at(vars(-genome),~./sum(.)) %>% 

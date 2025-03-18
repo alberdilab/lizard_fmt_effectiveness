@@ -3490,18 +3490,18 @@ alternative hypothesis: true location shift is not equal to 0</code></pre>
 <span id="cb105-3"><a href="does-captivity-change-the-microbial-community.html#cb105-3" tabindex="-1"></a>  <span class="fu">select</span>(<span class="dv">1</span>,<span class="dv">5</span><span class="sc">:</span><span class="dv">10</span>)</span></code></pre></div>
 <pre class="script-output"><code># A tibble: 32 × 7
 # Rowwise: 
-   genome                phylum             class                  order                  family                  genus               species                 
-   &lt;chr&gt;                 &lt;chr&gt;              &lt;chr&gt;                  &lt;chr&gt;                  &lt;chr&gt;                   &lt;chr&gt;               &lt;chr&gt;                   
- 1 AH1_2nd_10:bin_000010 p__Cyanobacteriota c__Vampirovibrionia    o__Gastranaerophilales f__Gastranaerophilaceae g__CALURL01         s__                     
- 2 AH1_2nd_12:bin_000001 p__Pseudomonadota  c__Gammaproteobacteria o__Pseudomonadales     f__Moraxellaceae        g__Acinetobacter    s__Acinetobacter johnso…
- 3 AH1_2nd_14:bin_000015 p__Bacillota_A     c__Clostridia          o__Christensenellales  f__UBA3700              g__                 s__                     
- 4 AH1_2nd_14:bin_000063 p__Bacillota_A     c__Clostridia          o__Lachnospirales      f__Lachnospiraceae      g__Blautia_A        s__                     
- 5 AH1_2nd_15:bin_000001 p__Pseudomonadota  c__Alphaproteobacteria o__Rhizobiales         f__Rhizobiaceae         g__Agrobacterium    s__Agrobacterium tumefa…
- 6 AH1_2nd_16:bin_000033 p__Bacteroidota    c__Bacteroidia         o__Bacteroidales       f__                     g__                 s__                     
- 7 AH1_2nd_16:bin_000096 p__Bacillota_A     c__Clostridia          o__Oscillospirales     f__Ruminococcaceae      g__Ruthenibacterium s__                     
- 8 AH1_2nd_17:bin_000015 p__Bacillota       c__Bacilli             o__Erysipelotrichales  f__Erysipelotrichaceae  g__                 s__                     
- 9 AH1_2nd_17:bin_000023 p__Bacillota       c__Bacilli             o__Erysipelotrichales  f__Coprobacillaceae     g__Coprobacillus    s__                     
-10 AH1_2nd_18:bin_000039 p__Bacteroidota    c__Bacteroidia         o__Bacteroidales       f__Rikenellaceae        g__Alistipes        s__                     
+   genome                phylum             class                  order                  family                  genus               species                       
+   &lt;chr&gt;                 &lt;chr&gt;              &lt;chr&gt;                  &lt;chr&gt;                  &lt;chr&gt;                   &lt;chr&gt;               &lt;chr&gt;                         
+ 1 AH1_2nd_10:bin_000010 p__Cyanobacteriota c__Vampirovibrionia    o__Gastranaerophilales f__Gastranaerophilaceae g__CALURL01         s__                           
+ 2 AH1_2nd_12:bin_000001 p__Pseudomonadota  c__Gammaproteobacteria o__Pseudomonadales     f__Moraxellaceae        g__Acinetobacter    s__Acinetobacter johnsonii    
+ 3 AH1_2nd_14:bin_000015 p__Bacillota_A     c__Clostridia          o__Christensenellales  f__UBA3700              g__                 s__                           
+ 4 AH1_2nd_14:bin_000063 p__Bacillota_A     c__Clostridia          o__Lachnospirales      f__Lachnospiraceae      g__Blautia_A        s__                           
+ 5 AH1_2nd_15:bin_000001 p__Pseudomonadota  c__Alphaproteobacteria o__Rhizobiales         f__Rhizobiaceae         g__Agrobacterium    s__Agrobacterium tumefaciens_H
+ 6 AH1_2nd_16:bin_000033 p__Bacteroidota    c__Bacteroidia         o__Bacteroidales       f__                     g__                 s__                           
+ 7 AH1_2nd_16:bin_000096 p__Bacillota_A     c__Clostridia          o__Oscillospirales     f__Ruminococcaceae      g__Ruthenibacterium s__                           
+ 8 AH1_2nd_17:bin_000015 p__Bacillota       c__Bacilli             o__Erysipelotrichales  f__Erysipelotrichaceae  g__                 s__                           
+ 9 AH1_2nd_17:bin_000023 p__Bacillota       c__Bacilli             o__Erysipelotrichales  f__Coprobacillaceae     g__Coprobacillus    s__                           
+10 AH1_2nd_18:bin_000039 p__Bacteroidota    c__Bacteroidia         o__Bacteroidales       f__Rikenellaceae        g__Alistipes        s__                           
 # ℹ 22 more rows</code></pre>
 <p><strong><em>Community elements differences in structural zeros</em></strong></p>
 <div class="sourceCode" id="cb107"><pre class="sourceCode r script-source"><code class="sourceCode r"><span id="cb107-1"><a href="does-captivity-change-the-microbial-community.html#cb107-1" tabindex="-1"></a>element_gift <span class="ot">&lt;-</span> GIFTs_elements_community <span class="sc">%&gt;%</span> </span>
