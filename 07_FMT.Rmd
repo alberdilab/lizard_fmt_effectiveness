@@ -422,22 +422,17 @@ ggarrange(p0, p1, p2, ncol=3, nrow=1, common.legend = TRUE, legend="right")
 
 # Is the gut microbiota similar to the donor after FMT?
 
-```{r filter_Data7, comment="", message=FALSE, warning=FALSE}
+```{r filter_data7, comment="", message=FALSE, warning=FALSE}
 sample_metadata <- sample_metadata %>%
     mutate(treatment=case_when(
     treatment %in% c("FMT1", "FMT2") ~ "FMT",
     TRUE ~ treatment
   ))
 
-samples_to_keep <- sample_metadata %>%
-  filter(type == "Treatment" & treatment %in% c("FMT", "Transplant")) %>% 
-  select(sample) %>% 
-  pull()
-
-subset_meta <- sample_metadata %>%
-  filter(type == "Treatment" & treatment %in% c("FMT", "Transplant"))
+alpha_div_meta <- alpha_div %>%
+  left_join(sample_metadata, by = join_by(sample == sample))%>%
+  filter(type == "Treatment" & treatment %in% c("Transplant", "FMT") ) 
 ```
-
 
 ## Alpha diversity
 
@@ -492,8 +487,23 @@ Model_phylo <- lme(fixed = phylogenetic ~ treatment, data = alpha_div_meta,
 summary(Model_phylo)
 ```
 
-
 ## Beta diversity
+
+```{r filter_Data7, comment="", message=FALSE, warning=FALSE}
+sample_metadata <- sample_metadata %>%
+    mutate(treatment=case_when(
+    treatment %in% c("FMT1", "FMT2") ~ "FMT",
+    TRUE ~ treatment
+  ))
+
+samples_to_keep <- sample_metadata %>%
+  filter(type == "Treatment" & treatment %in% c("FMT", "Transplant")) %>% 
+  select(sample) %>% 
+  pull()
+
+subset_meta <- sample_metadata %>%
+  filter(type == "Treatment" & treatment %in% c("FMT", "Transplant"))
+```
 
 ***Richness***
 ```{r permanova_rich7, comment="", message=FALSE, warning=FALSE}
