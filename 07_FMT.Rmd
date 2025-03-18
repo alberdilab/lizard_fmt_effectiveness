@@ -242,7 +242,7 @@ alpha_div %>%
 ```
 
 
-***Richness: Problems to calculate*** 
+***Richness*** 
 ```{r LMM_rich6, comment="", message=FALSE, warning=FALSE}
 Modelq0GLMMNB <- glmmTMB::glmmTMB(richness ~ treatment + (1|individual), 
                       data = alpha_div_meta, 
