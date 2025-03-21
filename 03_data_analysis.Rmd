@@ -9,8 +9,6 @@ set.seed(1802)
 ```{r load_data_community}
 load("data/08032025data.Rdata")
 load("data/04032025gifts.Rdata")
-load("data/beta_08032025.Rdata")
-load("data/alpha_08032025.Rdata")
 ```
 
 ```{r data, comment="", message=FALSE, warning=FALSE}
@@ -50,20 +48,22 @@ genome_counts_filt <- master_table %>%
   dplyr::select(where(~ !all(. == 0)))%>% 
   rownames_to_column(., "genome")
 
-genome_counts_filtering <- master_table %>% 
-  select(12,14:323) %>% 
-  t() %>%
-  row_to_names(row_number = 1) %>% 
-  as.data.frame() %>% 
-  mutate_if(is.character,as.numeric) %>% 
-  filter(rowSums(. != 0, na.rm = TRUE) > 0)%>%
-  dplyr::select(where(~ !all(. == 0)))
-
 genome_tree <- keep.tip(genome_tree, tip=genome_counts_filt$genome)
-#match_data(genome_counts_filtering,genome_tree)
 
 genome_metadata <- genome_metadata %>% 
   filter(genome %in% genome_counts_filt$genome)
+```
+
+```{r wrap_working_objects_2003, warning=FALSE, comments="", message=FALSE, eval=FALSE}
+save(sample_metadata, 
+     genome_metadata, 
+     genome_counts_filt, 
+     genome_tree,
+     phylum_colors,
+     data_stats,
+     genome_gifts,
+     master_table,
+     file = "data/objects_2003.Rdata")
 ```
 
 ## Calculate diversities

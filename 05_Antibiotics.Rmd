@@ -1,4 +1,10 @@
 # Does the antibiotic administration change the microbial community?
+```{r}
+load("data/objects_2003.Rdata")
+load("data/beta_08032025.Rdata")
+load("data/alpha_08032025.Rdata")
+```
+
 ```{r filter_data, comment="", message=FALSE, warning=FALSE}
 alpha_div_meta <- alpha_div %>%
   left_join(sample_metadata, by = join_by(sample == sample))%>%
@@ -6,7 +12,7 @@ alpha_div_meta <- alpha_div %>%
 ```
 
 ## Alpha diversity
-```{r alpha_div_plot_1, comment="", message=FALSE, warning=FALSE}
+```{r alpha_div_plot_1, comment="", message=FALSE, warning=FALSE, fig.height=12, fig.width=12, fig.fullwidth=TRUE}
 label_map <- c(
   "Cold_wet" = "Cold population", 
   "Hot_dry" = "Warm-population",
@@ -151,7 +157,7 @@ biplot_scores$Variable <- recode(biplot_scores$Variable,
                                  "subset_meta$PopulationHot_dry"="Warm population",
                                  "subset_meta$time_pointAntibiotics:subset_meta$PopulationHot_dry"="Interaction Wam population")
 
-beta_richness_rda <-CAP_df %>%
+CAP_df %>%
   group_by(Population, time_point) %>%
   mutate(x_cen = mean(CAP1, na.rm = TRUE)) %>%
   mutate(y_cen = mean(CAP2, na.rm = TRUE)) %>%
@@ -191,7 +197,7 @@ biplot_scores$Variable <- recode(biplot_scores$Variable,
                                  "subset_meta$PopulationHot_dry"="Warm population",
                                  "subset_meta$time_pointAntibiotics:subset_meta$PopulationHot_dry"="Interaction Wam population")
 
-beta_neutral_rda <- CAP_df %>%
+CAP_df %>%
   group_by(Population, time_point) %>%
   mutate(x_cen = mean(CAP1, na.rm = TRUE)) %>%
   mutate(y_cen = mean(CAP2, na.rm = TRUE)) %>%
@@ -232,7 +238,7 @@ biplot_scores$Variable <- recode(biplot_scores$Variable,
                                  "subset_meta$PopulationHot_dry"="Warm population",
                                  "subset_meta$time_pointAntibiotics:subset_meta$PopulationHot_dry"="Interaction Wam population")
 
-beta_phylogenetic_rda<- CAP_df %>%
+CAP_df %>%
   group_by(type, time_point) %>%
   mutate(x_cen = mean(CAP1, na.rm = TRUE)) %>%
   mutate(y_cen = mean(CAP2, na.rm = TRUE)) %>%
@@ -257,10 +263,6 @@ beta_phylogenetic_rda<- CAP_df %>%
   theme_classic()
 ```
 
-```{r beta_neutral_rda_plot_final, fig.height=8, fig.width=12, fig.fullwidth=TRUE}
-ggarrange(beta_richness_rda, beta_neutral_rda, beta_phylogenetic_rda, ncol=3, nrow=1, common.legend = TRUE, legend="right")
-```
-
 ### Cold population
 #### Structural zeros
 ```{r struct_zero, comment="", message=FALSE, warning=FALSE}
@@ -272,6 +274,9 @@ acclimation_samples <- sample_metadata %>%
 antibiotics_samples <- sample_metadata %>%
   filter(Population == "Cold_wet" & time_point == "Antibiotics") %>% 
   dplyr::select(sample) %>% pull()
+
+subset_meta <- sample_metadata %>%
+  filter(Population == "Cold_wet" & time_point %in% c("Antibiotics","Acclimation"))
 
 structural_zeros <- genome_counts_filt %>% 
   select(one_of(c("genome",subset_meta$sample))) %>%
@@ -301,6 +306,10 @@ structural_zeros %>%
   filter(present=="acclimation") %>% 
   count(phylum, name = "sample_count") %>%
   arrange(desc(sample_count)) 
+
+structural_zeros %>% 
+  filter(present=="acclimation") %>% 
+  select(1,5:10)
 ```
 
 ***Antibiotics***
@@ -371,7 +380,7 @@ phylo_taxonomy <- genome_metadata %>%
 
 physeq_genome_filtered <- phyloseq(phylo_genome, phylo_taxonomy, phylo_samples)
 ```
-```{r ancom_rand_accl_ant, comment="", message=FALSE, warning=FALSE, eval=FALSE}
+```{r ancom_rand_accl_ant, comment="", message=FALSE, warning=FALSE}
 ancom_rand_output = ancombc2(data = physeq_genome_filtered, 
                   assay_name = "counts", 
                   tax_level = NULL,
@@ -400,13 +409,13 @@ ancom_rand_output = ancombc2(data = physeq_genome_filtered,
 
 ```
 
-```{r save_ancombc1, warning=FALSE, comments="", message=FALSE, eval=FALSE}
+```{r save_ancombc1, warning=FALSE, comments="", message=FALSE}
 save(ancom_rand_output, 
-     file = "data/ancombc_antib_accl_1203.Rdata")
+     file = "data/ancombc_antib_accl_2003.Rdata")
 ```
 
-```{r load_ancombc, warning=FALSE, comments="", message=FALSE}
-load("data/ancombc_antib_accl_1203.Rdata")
+```{r load_ancombc, warning=FALSE, comments="", message=FALSE, eval=FALSE}
+load("data/ancombc_antib_accl_2003.Rdata")
 ```
 
 ```{r ancom_rand1, comment="", message=FALSE, warning=FALSE}
@@ -460,7 +469,9 @@ ggplot(., aes(x=lfc_time_pointAntibiotics, y=forcats::fct_reorder(genome,lfc_tim
 ```
 
 ***Phyla of the significant MAGs***
-```{r acclim_sign_features, comment="", message=FALSE, warning=FALSE}
+
+Acclimation
+```{r acclim_sign_features_acl, comment="", message=FALSE, warning=FALSE}
 ancombc_rand_table_mag%>%
   filter(lfc_time_pointAntibiotics<0)  %>% 
   count(phylum, name = "sample_count") %>%
@@ -469,11 +480,18 @@ ancombc_rand_table_mag%>%
 ancombc_rand_table_mag%>%
   filter(lfc_time_pointAntibiotics<0)  %>% 
   select(phylum, genus, species)
+```
+
+Antibiotics
+```{r acclim_sign_features_ant, comment="", message=FALSE, warning=FALSE}
+ancombc_rand_table_mag%>%
+  filter(lfc_time_pointAntibiotics>0)  %>% 
+  count(phylum, name = "sample_count") %>%
+  arrange(desc(sample_count))  
 
 ancombc_rand_table_mag%>%
-  filter(lfc_time_pointAntibiotics<0)  %>% 
-  count(genus, name = "sample_count") %>%
-  arrange(desc(sample_count))
+  filter(lfc_time_pointAntibiotics>0)  %>% 
+  select(phylum, genus, species)
 ```
 
 #### Differences in the functional capacity
@@ -776,7 +794,7 @@ phylo_taxonomy <- genome_metadata %>%
 physeq_genome_filtered <- phyloseq(phylo_genome, phylo_taxonomy, phylo_samples)
 ```
 
-```{r ancom_rand_accl_ant_warm, comment="", message=FALSE, warning=FALSE, eval=FALSE}
+```{r ancom_rand_accl_ant_warm, comment="", message=FALSE, warning=FALSE}
 ancom_rand_output = ancombc2(data = physeq_genome_filtered, 
                   assay_name = "counts", 
                   tax_level = NULL,
@@ -805,13 +823,13 @@ ancom_rand_output = ancombc2(data = physeq_genome_filtered,
 
 ```
 
-```{r save_ancombc1_warm, warning=FALSE, comments="", message=FALSE, eval=FALSE}
+```{r save_ancombc1_warm, warning=FALSE, comments="", message=FALSE}
 save(ancom_rand_output, 
-     file = "data/ancombc_antib_accl_warm_1203.Rdata")
+     file = "data/ancombc_antib_accl_warm_2003.Rdata")
 ```
 
-```{r load_ancombc_warm, warning=FALSE, comments="", message=FALSE}
-load("data/ancombc_antib_accl_warm_1203.Rdata")
+```{r load_ancombc_warm, warning=FALSE, comments="", message=FALSE, eval=FALSE}
+load("data/ancombc_antib_accl_warm_2003.Rdata")
 ```
 
 ```{r ancom_rand1_warm, comment="", message=FALSE, warning=FALSE}
@@ -864,22 +882,24 @@ ggplot(., aes(x=lfc_time_pointAntibiotics, y=forcats::fct_reorder(genome,lfc_tim
 ```
 
 ***Phyla of the significant MAGs***
-```{r acclim_sign_features_warm, comment="", message=FALSE, warning=FALSE}
+Acclimation
+```{r acclim_sign_features_warm2, comment="", message=FALSE, warning=FALSE}
 ancombc_rand_table_mag%>%
   filter(lfc_time_pointAntibiotics<0)  %>% 
+  select(phylum, genus, species)
+```
+
+Antibiotics
+```{r antib_sign_features_warm2, comment="", message=FALSE, warning=FALSE}
+ancombc_rand_table_mag%>%
+  filter(lfc_time_pointAntibiotics>0)  %>% 
   count(phylum, name = "sample_count") %>%
   arrange(desc(sample_count))  
 
 ancombc_rand_table_mag%>%
-  filter(lfc_time_pointAntibiotics<0)  %>% 
+  filter(lfc_time_pointAntibiotics>0)  %>% 
   select(phylum, genus, species)
-
-ancombc_rand_table_mag%>%
-  filter(lfc_time_pointAntibiotics<0)  %>% 
-  count(genus, name = "sample_count") %>%
-  arrange(desc(sample_count))
 ```
-
 #### Differences in the functional capacity
 ```{r gift_acclim_antib_warm, comment="", message=FALSE, warning=FALSE}
 GIFTs_elements <- to.elements(genome_gifts,GIFT_db)
