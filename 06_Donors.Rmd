@@ -1,11 +1,11 @@
 # Are the microbial communities similar in both donor samples?
-```{r}
+```{r data_donor, comment="", message=FALSE, warning=FALSE, echo=FALSE}
 load("data/objects_2003.Rdata")
 load("data/beta_08032025.Rdata")
 load("data/alpha_08032025.Rdata")
 ```
-## Alpha diversity
 
+## Alpha diversity
 ```{r filter_data_donor, comment="", message=FALSE, warning=FALSE}
 alpha_div_meta <- alpha_div %>%
   left_join(sample_metadata, by = join_by(sample == sample))%>%
@@ -125,7 +125,6 @@ adonis2(phylo ~ treatment,
 ```
 
 # Does the donor sample maintain the microbial community found in acclimation?
-
 ```{r filter_data_donor2, comment="", message=FALSE, warning=FALSE}
 sample_metadata <- sample_metadata %>%
     mutate(treatment=case_when(
@@ -153,7 +152,6 @@ subset_meta <- sample_metadata %>%
 ```
 
 ## Alpha diversity
-
 ```{r alpha_div_plot_002, comment="", message=FALSE, warning=FALSE}
 alpha_div %>%
   pivot_longer(-sample, names_to = "metric", values_to = "value") %>%
@@ -207,6 +205,7 @@ summary(Model_phylo)
 
 
 ## Beta diversity
+
 ***Richness***
 ```{r permanova_richness3, comment="", message=FALSE, warning=FALSE}
 richness <- as.matrix(beta_q0n$S)
@@ -259,8 +258,9 @@ adonis2(phylo ~ treatment,
         tt()
 ```
 
+***NMDS***
 ```{r beta_div_nmds_phylo_plot, comment="", message=FALSE, warning=FALSE}
-p0<-richness %>%
+richness %>%
   vegan::metaMDS(., trymax = 500, k = 2, trace=0) %>%
   vegan::scores() %>%
   as_tibble(., rownames = "sample") %>%
@@ -285,7 +285,7 @@ p0<-richness %>%
     legend.position = "right", legend.box = "vertical"
     )
 
-p1<-neutral %>%
+neutral %>%
   vegan::metaMDS(., trymax = 500, k = 2, trace=0) %>%
   vegan::scores() %>%
   as_tibble(., rownames = "sample") %>%
@@ -310,7 +310,7 @@ p1<-neutral %>%
     legend.position = "right", legend.box = "vertical"
     )
 
-p2<-phylo %>%
+phylo %>%
   vegan::metaMDS(., trymax = 500, k = 2, trace=0) %>%
   vegan::scores() %>%
   as_tibble(., rownames = "sample") %>%
@@ -336,13 +336,7 @@ p2<-phylo %>%
     )
 ```
 
-```{r beta_neutral_nmds_plot_donors_final, fig.height=8, fig.width=12, fig.fullwidth=TRUE}
-ggarrange(p0, p1, p2, ncol=3, nrow=1, common.legend = TRUE, legend="right")
-```
-
 # Is the donor sample microbiota different to recipient microbiota?
-
-
 
 ## Alpha diversity
 
@@ -470,8 +464,9 @@ adonis2(phylo ~ treatment,
         tt()
 ```
 
+***NMDS***
 ```{r beta_div_nmds_1_plot, comment="", message=FALSE, warning=FALSE}
-p0<-richness %>%
+richness %>%
   vegan::metaMDS(., trymax = 500, k = 2, trace=0) %>%
   vegan::scores() %>%
   as_tibble(., rownames = "sample") %>%
@@ -496,7 +491,7 @@ p0<-richness %>%
     legend.position = "right", legend.box = "vertical"
     )
 
-p1<-neutral %>%
+neutral %>%
   vegan::metaMDS(., trymax = 500, k = 2, trace=0) %>%
   vegan::scores() %>%
   as_tibble(., rownames = "sample") %>%
@@ -521,7 +516,7 @@ p1<-neutral %>%
     legend.position = "right", legend.box = "vertical"
     )
 
-p2<-phylo %>%
+phylo %>%
   vegan::metaMDS(., trymax = 500, k = 2, trace=0) %>%
   vegan::scores() %>%
   as_tibble(., rownames = "sample") %>%
@@ -545,8 +540,4 @@ p2<-phylo %>%
     legend.title = element_text(size = 12),
     legend.position = "right", legend.box = "vertical"
     )
-```
-
-```{r beta_neutral_nmds_plot_donors_1_final, fig.height=8, fig.width=12, fig.fullwidth=TRUE}
-ggarrange(p0, p1, p2, ncol=3, nrow=1, common.legend = TRUE, legend="right")
 ```

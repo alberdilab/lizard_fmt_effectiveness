@@ -1,19 +1,18 @@
 # Does captivity change the microbial community?
-```{r}
+```{r data_acclim, comment="", message=FALSE, warning=FALSE, echo=FALSE}
 load("data/objects_2003.Rdata")
 load("data/beta_08032025.Rdata")
 load("data/alpha_08032025.Rdata")
 ```
+
+## Alpha diversity
 
 ```{r filter_data_accli, comment="", message=FALSE, warning=FALSE}
 alpha_div_meta <- alpha_div %>%
   left_join(sample_metadata, by = join_by(sample == sample))%>%
   filter(time_point %in% c("Acclimation", "Wild") ) 
 ```
-
-## Alpha diversity
-
-```{r alpha_div_plot_1_accli, comment="", message=FALSE, warning=FALSE}
+```{r alpha_div_plot_1_accli, comment="", message=FALSE, warning=FALSE, fig.height=12, fig.width=12, fig.fullwidth=TRUE}
 label_map <- c(
   "Cold_wet" = "Cold population", 
   "Hot_dry" = "Warm-population",
@@ -159,7 +158,7 @@ biplot_scores$Variable <- recode(biplot_scores$Variable,
                                  "subset_meta$PopulationHot_dry"="Warm population",
                                  "subset_meta$time_pointWild:subset_meta$PopulationHot_dry"="Interaction Wam population")
 
-beta_richness_rda <-CAP_df %>%
+CAP_df %>%
   group_by(Population, time_point) %>%
   mutate(x_cen = mean(CAP1, na.rm = TRUE)) %>%
   mutate(y_cen = mean(CAP2, na.rm = TRUE)) %>%
@@ -199,7 +198,7 @@ biplot_scores$Variable <- recode(biplot_scores$Variable,
                                  "subset_meta$PopulationHot_dry"="Warm population",
                                  "subset_meta$time_pointWild:subset_meta$PopulationHot_dry"="Interaction Wam population")
 
-beta_neutral_rda <- CAP_df %>%
+CAP_df %>%
   group_by(Population, time_point) %>%
   mutate(x_cen = mean(CAP1, na.rm = TRUE)) %>%
   mutate(y_cen = mean(CAP2, na.rm = TRUE)) %>%
@@ -240,7 +239,7 @@ biplot_scores$Variable <- recode(biplot_scores$Variable,
                                  "subset_meta$PopulationHot_dry"="Warm population",
                                  "subset_meta$time_pointWild:subset_meta$PopulationHot_dry"="Interaction Wam population")
 
-beta_phylogenetic_rda<- CAP_df %>%
+CAP_df %>%
   group_by(type, time_point) %>%
   mutate(x_cen = mean(CAP1, na.rm = TRUE)) %>%
   mutate(y_cen = mean(CAP2, na.rm = TRUE)) %>%
@@ -263,10 +262,6 @@ beta_phylogenetic_rda<- CAP_df %>%
   geom_text(data = biplot_scores, aes(x = CAP1, y = CAP2, label = Variable),
             inherit.aes = FALSE, color = "black", vjust = -0.5, hjust = 0.5)+
   theme_classic()
-```
-
-```{r beta_neutral_nmds_plot_final, fig.height=8, fig.width=12, fig.fullwidth=TRUE}
-ggarrange(beta_richness_rda, beta_neutral_rda, beta_phylogenetic_rda, ncol=3, nrow=1, common.legend = TRUE, legend="right")
 ```
 
 ## Differences in MAGs
