@@ -53,6 +53,7 @@ community-functions-differences-1
 does-the-antibiotic-administration-change-the-microbial-community
 alpha-diversity-2
 beta-diversity-2
+differences-in-mags-and-functional-capacity
 cold-population-1
 structural-zeros-2
 differential-abundance-analysis-composition-1
@@ -66,7 +67,6 @@ differences-in-the-functional-capacity-3
 community-elements-differences-3
 community-functions-differences-3
 does-antibiotic-administration-remove-the-differences-found-in-the-two-populations
-shapiro-test
 alpha-diversity-3
 beta-diversity-3
 are-the-microbial-communities-similar-in-both-donor-samples
@@ -87,13 +87,17 @@ beta-diversity-8
 is-the-gut-microbiota-similar-to-the-donor-after-fmt
 alpha-diversity-9
 beta-diversity-9
-structural-zeros-4
 transplant-vs-fmt1
+structural-zeros-4
 functional-capacities-of-the-structural-zeros
 differential-abundance-analysis-composition-3
-transplant-vs-fmt2
-functional-capacities-of-the-structural-zeros-1
-differential-abundance-analysis-composition-4
 differences-in-the-functional-capacities
 community-elements-differences-4
 community-functions-differences-4
+transplant-vs-fmt2
+structural-zeros-5
+functional-capacities-of-the-structural-zeros-1
+differential-abundance-analysis-composition-4
+differences-in-the-functional-capacities-1
+community-elements-differences-5
+community-functions-differences-5

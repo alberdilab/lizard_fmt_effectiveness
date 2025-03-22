@@ -267,6 +267,7 @@ CAP_df %>%
 ## Differences in MAGs
 
 ### Cold population
+
 #### Structural zeros
 
 ```{r struct_zero_accli, comment="", message=FALSE, warning=FALSE}
