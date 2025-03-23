@@ -642,6 +642,44 @@ phylo %>%
     )
 ```
 
+### Differences in the functional capacities
+```{r gift_all_three, comment="", message=FALSE, warning=FALSE}
+sample_sub <- sample_metadata %>%
+  filter(type == "Treatment" & treatment %in% c("FMT1","FMT2", "Transplant"))
+
+genome_counts_filtered <- genome_counts_filt %>% 
+    select(one_of(c("genome",sample_sub$sample)))
+
+GIFTs_elements <- to.elements(genome_gifts,GIFT_db)
+GIFTs_elements_filtered <- GIFTs_elements[rownames(GIFTs_elements) %in% genome_counts_filtered$genome,]
+GIFTs_elements_filtered <- as.data.frame(GIFTs_elements_filtered) %>% 
+  select_if(~ !is.numeric(.) || sum(.) != 0)
+GIFTs_functions <- to.functions(GIFTs_elements_filtered,GIFT_db)
+GIFTs_domains <- to.domains(GIFTs_functions,GIFT_db)
+
+genome_counts_filtered_row <- genome_counts_filtered %>%
+  mutate_at(vars(-genome),~./sum(.)) %>% 
+  column_to_rownames(., "genome") 
+
+GIFTs_functions_community <- to.community(GIFTs_functions,genome_counts_filtered_row,GIFT_db)
+```
+
+```{r gitfs_func_fmt_three, comment="", message=FALSE, warning=FALSE}
+GIFTs_functions_community %>%
+  rowMeans() %>%
+  as_tibble(., rownames = "sample") %>%
+  left_join(sample_metadata, by = join_by(sample == sample)) %>%
+  group_by(treatment) %>%
+  summarise(MCI = mean(value), sd = sd(value))
+
+MCI <- GIFTs_functions_community %>%
+  rowMeans() %>%
+  as_tibble(., rownames = "sample") %>%
+  left_join(sample_metadata, by = join_by(sample == sample)) 
+
+shapiro.test(MCI$value)
+kruskal.test(value ~ treatment, data=MCI)
+```
 
 ## Transplant vs FMT1
 
@@ -869,7 +907,6 @@ ancombc_FMT_transplant_1203 = ancombc2(data = physeq_genome_filtered,
                   lme_control = lme4::lmerControl(),
                   mdfdr_control = list(fwer_ctrl_method = "holm", B = 100), 
                   trend_control = NULL)
-
 ```
 
 ```{r save_ancombc_fmt_tranp, warning=FALSE, comments="", message=FALSE}
@@ -943,7 +980,6 @@ ggplot(., aes(x=lfc_treatmentTransplant, y=forcats::fct_reorder(genome,lfc_treat
   geom_col() + 
   scale_fill_manual(values=tax_color) + 
   geom_hline(yintercept=0) + 
-#  coord_flip()+
   theme(panel.background = element_blank(),
         axis.line = element_line(size = 0.5, linetype = "solid", colour = "black"),
         axis.text.x = element_text(size = 12),
@@ -1378,7 +1414,7 @@ ancombc_rand_table_mag %>%
   filter(lfc_treatmentTransplant>0)  %>% 
   count(phylum, name = "Transplant") %>%
   arrange(desc(Transplant))  %>% 
-  full_join(.,fmt_count, by="phylum")%>%
+  full_join(.,fmt2_count, by="phylum")%>%
   mutate(across(where(is.numeric), ~ replace_na(., 0))) %>% 
   as.data.frame() %>% 
   summarise(across(where(is.numeric), ~ sum(.x, na.rm = TRUE)))
