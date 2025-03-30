@@ -88,14 +88,14 @@ is-the-gut-microbiota-similar-to-the-donor-after-fmt
 alpha-diversity-9
 beta-diversity-9
 differences-in-the-functional-capacities
-transplant-vs-fmt1
+donor-vs-fmt1
 structural-zeros-4
 functional-capacities-of-the-structural-zeros
 differential-abundance-analysis-composition-3
 differences-in-the-functional-capacities-1
 community-elements-differences-4
 community-functions-differences-4
-transplant-vs-fmt2
+donor-vs-fmt2
 structural-zeros-5
 functional-capacities-of-the-structural-zeros-1
 differential-abundance-analysis-composition-4

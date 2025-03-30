@@ -144,7 +144,7 @@ genome_coverage <- genome_hits %>%
   mutate(across(where(is.numeric), ~ ./genome_metadata$length))
 ```
 
-## Filtering
+### Filtering
 
 Remove low sequencing depth samples
 
@@ -167,7 +167,7 @@ genome_coverage <- genome_coverage %>%
   select(-columns_to_exclude)
 ```
 
-### Filter reads by coverage
+#### Filter reads by coverage
 
 ```{r filter_coverage_1, warning=FALSE, comments="", message=FALSE, eval=FALSE}
 #Filter read_counts for the MAGs with over 70% completeness and less than 10% contamination
@@ -180,7 +180,7 @@ read_counts_filt <- genome_coverage %>%
   mutate(across(-1, ~ . * read_counts[[cur_column()]])) 
 ```
 
-### Transform reads into genome counts
+#### Transform reads into genome counts
 
 ```{r calculate_genome_counts_unfiltered_1, warning=FALSE, comments="", message=FALSE, eval=FALSE}
 readlength=150
@@ -194,9 +194,9 @@ genome_counts_filt <- read_counts_filt %>%
   mutate(across(where(is.numeric), ~ . / (genome_metadata$length / readlength) ))
 ```
 
-## Load data statistics
+### Load data statistics
 
-### Raw reads
+#### Raw reads
 
 ```{r raw_reads_1, warning=FALSE, comments="", message=FALSE, eval=FALSE}
 raw_reads <-
@@ -218,7 +218,7 @@ raw_reads <-
   filter(sample!= "AD91")
 ```
 
-### Quality-filtered reads
+#### Quality-filtered reads
 
 ```{r filtered_reads_1, warning=FALSE, comments="", message=FALSE, eval=FALSE}
 fastp_reads <-
@@ -243,7 +243,7 @@ fastp_reads <-
   filter(sample!= "AD91")
 ```
 
-### Host-mapped reads
+#### Host-mapped reads
 
 ```{r host_mapped_1, warning=FALSE, comments="", message=FALSE, eval=FALSE}
 host_mapped <-
@@ -284,7 +284,7 @@ host_mapped <-
   filter(sample!= "AD91")
 ```
 
-### Prokaryotic fraction
+#### Prokaryotic fraction
 
 ```{r singlem_1, warning=FALSE, comments="", message=FALSE, eval=FALSE}
 singlem <-
@@ -317,7 +317,7 @@ mutate(sample_prefix = str_extract(sample, "^[^_]+")) %>%
   filter(sample!= "AD91")
 ```
 
-### MAG-mapped reads
+#### MAG-mapped reads
 
 ```{r mag_mapping_1, warning=FALSE, comments="", message=FALSE, eval=FALSE}
 mag_mapping <-
@@ -338,7 +338,7 @@ mag_mapping <-
   filter(sample!= "AD91")
 ```
 
-### Wrap data statistics
+#### Wrap data statistics
 
 ```{r wrap_statistics_1, warning=FALSE, comments="", message=FALSE, eval=FALSE}
 data_stats <- raw_reads %>%
@@ -353,7 +353,7 @@ data_stats<- data_stats %>%
   filter(!str_detect(sample, "refseq500 \\|"))
 ```
 
-## Prepare color scheme
+### Prepare color scheme
 
 [AlberdiLab](www.alberdilab.dk) projects use unified color schemes developed for the [Earth Hologenome Initiative](www.earthhologenome.org), to facilitate figure interpretation.
 
@@ -367,7 +367,7 @@ phylum_colors <- read_tsv("https://raw.githubusercontent.com/earthhologenome/EHI
     pull(colors, name=phylum)
 ```
 
-## Wrap working objects
+### Wrap working objects
 
 All working objects are wrapped into a single Rdata object to facilitate downstream usage.
 

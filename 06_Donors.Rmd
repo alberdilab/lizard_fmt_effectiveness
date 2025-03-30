@@ -1,6 +1,6 @@
 # Are the microbial communities similar in both donor samples?
 ```{r data_donor, comment="", message=FALSE, warning=FALSE, echo=FALSE}
-load("data/objects_2003.Rdata")
+load("data/objects_2803.Rdata")
 load("data/beta_08032025.Rdata")
 load("data/alpha_08032025.Rdata")
 ```
@@ -9,16 +9,16 @@ load("data/alpha_08032025.Rdata")
 ```{r filter_data_donor, comment="", message=FALSE, warning=FALSE}
 alpha_div_meta <- alpha_div %>%
   left_join(sample_metadata, by = join_by(sample == sample))%>%
-  filter(type =="Hot_control" & time_point %in% c( "Transplant1", "Transplant2"))
+  filter(type =="Warm_control" & time_point %in% c( "Donor1", "Donor2"))
 ```
 
 ```{r filter_Data2, comment="", message=FALSE, warning=FALSE}
 samples_to_keep <- sample_metadata %>%
-  filter(type =="Hot_control" & time_point %in% c( "Transplant1", "Transplant2"))%>% 
+  filter(type =="Warm_control" & time_point %in% c( "Donor1", "Donor2"))%>% 
   select(sample) %>% 
   pull()
 subset_meta <- sample_metadata %>%
-  filter(type =="Hot_control" & time_point %in% c( "Transplant1", "Transplant2"))
+  filter(type =="Warm_control" & time_point %in% c( "Donor1", "Donor2"))
 ```
 
 ```{r alpha_div_plot_02, comment="", message=FALSE, warning=FALSE}
@@ -26,28 +26,21 @@ alpha_div %>%
   pivot_longer(-sample, names_to = "metric", values_to = "value") %>%
   left_join(., sample_metadata, by = "sample") %>%
   mutate(metric=factor(metric,levels=c("richness","neutral","phylogenetic"))) %>%
-  filter(type =="Hot_control" & time_point %in% c( "Transplant1", "Transplant2")) %>% 
+  filter(type =="Warm_control" & time_point %in% c( "Donor1", "Donor2")) %>% 
   ggplot(aes(y = value, x = time_point, color=time_point, fill=time_point)) +
-  geom_boxplot(outlier.shape = NA) +
-  geom_jitter(alpha=0.5) +
-  scale_color_manual(name="time_point",
-          breaks=c("Transplant1","Transplant2"),
-          values=c('#d5992c', "#d5b52c")) +
-      scale_fill_manual(name="time_point",
-          breaks=c("Transplant1","Transplant2"),
-          values=c('#d5992c50', "#d5b52c50")) +
+  geom_boxplot(width = 0.5,alpha=0.5, outlier.shape = NA, show.legend = FALSE) +
+  geom_jitter(width = 0.2,show.legend = FALSE) +
+  scale_color_manual(name="Time point",values=c('#d5992c', "#d5b52c")) +
+  scale_fill_manual(name="Time point",values=c('#d5992c', "#d5b52c"))  +
   facet_wrap(. ~ metric, scales = "free") +
   theme_classic() +
   theme(
     strip.background = element_blank(),
     panel.grid.minor.x = element_line(size = .1, color = "grey"),
     axis.title.x = element_blank(),
-    axis.title.y = element_text(size=10),
-    axis.text.x = element_text(angle = 45, hjust = 1),
-    # Increase plot size
-    plot.title = element_text(size = 10),
-    axis.text = element_text(size = 8),
-    axis.title = element_text(size = 8)
+    axis.text = element_text(size = 14),
+    axis.title = element_text(size = 14),
+    strip.text = element_text(size = 18, lineheight = 0.6),
       ) +
   ylab("Alpha diversity")
 ```
@@ -80,10 +73,10 @@ richness <- as.matrix(beta_q0n$S)
 richness <- as.dist(richness[rownames(richness) %in% samples_to_keep,
                colnames(richness) %in% samples_to_keep])
 
-betadisper(richness, subset_meta$treatment) %>% permutest(.)
+betadisper(richness, subset_meta$time_point) %>% permutest(.)
 ```
 ```{r permanova_richness2_donor_adonis, comment="", message=FALSE, warning=FALSE}
-adonis2(richness ~ treatment,
+adonis2(richness ~ time_point,
         data = subset_meta %>% arrange(match(sample,labels(richness))),
         permutations = 999,
         strata = subset_meta %>% arrange(match(Tube_code,labels(richness))) %>% pull(individual)) %>%
@@ -97,10 +90,10 @@ neutral <- as.matrix(beta_q1n$S)
 neutral <- as.dist(neutral[rownames(neutral) %in% samples_to_keep,
                colnames(neutral) %in% samples_to_keep])
 
-betadisper(neutral, subset_meta$treatment) %>% permutest(.) 
+betadisper(neutral, subset_meta$time_point) %>% permutest(.) 
 ```
 ```{r permanova_neutral2_adonis, comment="", message=FALSE, warning=FALSE}
-adonis2(neutral ~ treatment,
+adonis2(neutral ~ time_point,
         data = subset_meta %>% arrange(match(Tube_code,labels(neutral))),
         permutations = 999,
         strata = subset_meta %>% arrange(match(Tube_code,labels(neutral))) %>% pull(individual)) %>%
@@ -113,10 +106,10 @@ adonis2(neutral ~ treatment,
 phylo <- as.matrix(beta_q1p$S)
 phylo <- as.dist(phylo[rownames(phylo) %in% samples_to_keep,
                colnames(phylo) %in% samples_to_keep])
-betadisper(phylo, subset_meta$treatment) %>% permutest(.) 
+betadisper(phylo, subset_meta$time_point) %>% permutest(.) 
 ```
 ```{r permanova_phylo2_adonis, comment="", message=FALSE, warning=FALSE}
-adonis2(phylo ~ treatment,
+adonis2(phylo ~ time_point,
         data = subset_meta %>% arrange(match(Tube_code,labels(phylo))),
         permutations = 999,
         strata = subset_meta %>% arrange(match(Tube_code,labels(phylo))) %>% pull(individual)) %>%
@@ -127,28 +120,24 @@ adonis2(phylo ~ treatment,
 # Does the donor sample maintain the microbial community found in acclimation?
 ```{r filter_data_donor2, comment="", message=FALSE, warning=FALSE}
 sample_metadata <- sample_metadata %>%
+  mutate(treatment=time_point) %>% 
     mutate(treatment=case_when(
-    treatment %in% c("Transplant1", "Transplant2") ~ "Transplant",
+    treatment %in% c("Donor1", "Donor2") ~ "Donor",
     TRUE ~ treatment
   ))
 
 alpha_div_meta <- alpha_div %>%
   left_join(sample_metadata, by = join_by(sample == sample))%>%
-  filter(type == "Hot_control" & treatment %in% c("Acclimation","Transplant"))
+  filter(type == "Warm_control" & treatment %in% c("Acclimation","Donor"))
 ```
 
 ```{r filter_data3, comment="", message=FALSE, warning=FALSE}
-sample_metadata <- sample_metadata %>%
-    mutate(treatment=case_when(
-    treatment %in% c("Transplant1", "Transplant2") ~ "Transplant",
-    TRUE ~ treatment
-  ))
 samples_to_keep <- sample_metadata %>%
-  filter(type == "Hot_control" & treatment %in% c("Acclimation","Transplant")) %>% 
+  filter(type == "Warm_control" & treatment %in% c("Acclimation","Donor")) %>% 
   select(sample) %>% 
   pull()
 subset_meta <- sample_metadata %>%
-  filter(type == "Hot_control" & treatment %in% c("Acclimation","Transplant"))
+  filter(type == "Warm_control" & treatment %in% c("Acclimation","Donor"))
 ```
 
 ## Alpha diversity
@@ -157,28 +146,21 @@ alpha_div %>%
   pivot_longer(-sample, names_to = "metric", values_to = "value") %>%
   left_join(., sample_metadata, by = "sample") %>%
   mutate(metric=factor(metric,levels=c("richness","neutral","phylogenetic"))) %>%
-  filter(type == "Hot_control" & treatment %in% c("Acclimation","Transplant")) %>% 
+  filter(type == "Warm_control" & treatment %in% c("Acclimation","Donor")) %>% 
   ggplot(aes(y = value, x = treatment, color=treatment, fill=treatment)) +
-  geom_boxplot(outlier.shape = NA) +
-  geom_jitter(alpha=0.5) +
-  scale_color_manual(name="treatment",
-          breaks=c("Acclimation","Transplant"),
-          values=c("#d57d2c", "#d5b52c")) +
-      scale_fill_manual(name="treatment",
-          breaks=c("Acclimation","Transplant"),
-          values=c("#d57d2c50", "#d5b52c50")) +
-  facet_wrap(. ~ metric, scales = "free") +
+  geom_boxplot(width = 0.5,alpha=0.5 ,outlier.shape = NA, show.legend = FALSE) +
+  geom_jitter(width = 0.2, show.legend = FALSE) +
+  scale_color_manual(values=c("#003a45", "#d5b52c")) +
+  scale_fill_manual(values=c("#003a45", "#d5b52c")) +
+  facet_wrap( ~ metric, scales = "free")+
   theme_classic() +
   theme(
     strip.background = element_blank(),
     panel.grid.minor.x = element_line(size = .1, color = "grey"),
+    axis.text = element_text(size = 12),
+    axis.title.y = element_text(size = 14),
     axis.title.x = element_blank(),
-    axis.title.y = element_text(size=10),
-    axis.text.x = element_text(angle = 45, hjust = 1),
-    # Increase plot size
-    plot.title = element_text(size = 10),
-    axis.text = element_text(size = 8),
-    axis.title = element_text(size = 8)
+    strip.text = element_text(size = 16, lineheight = 0.6)
       ) +
   ylab("Alpha diversity")
 ```
@@ -270,11 +252,9 @@ richness %>%
   mutate(y_cen = mean(NMDS2, na.rm = TRUE)) %>%
   ungroup() %>%
   ggplot(aes(x = NMDS1, y = NMDS2, color = treatment)) +
-  geom_point(size = 4) +
-  scale_color_manual(name="treatment",
-          breaks=c("Acclimation","Transplant"),
-          values=c("#d57d2c", "#d5b52c")) +
-  geom_segment(aes(x = x_cen, y = y_cen, xend = NMDS1, yend = NMDS2), alpha = 0.9, show.legend = FALSE) +
+  geom_point(size = 3) +
+  scale_color_manual(name="Time point",values=c("#003a45", "#d5b52c")) +
+  geom_segment(aes(x = x_cen, y = y_cen, xend = NMDS1, yend = NMDS2), alpha = 0.6, show.legend = FALSE) +
   theme(
     axis.title = element_text(size = 12, face = "bold"),
     axis.text = element_text(size = 10),
@@ -295,11 +275,9 @@ neutral %>%
   mutate(y_cen = mean(NMDS2, na.rm = TRUE)) %>%
   ungroup() %>%
   ggplot(aes(x = NMDS1, y = NMDS2, color = treatment)) +
-  geom_point(size = 4) +
-  scale_color_manual(name="treatment",
-          breaks=c("Acclimation","Transplant"),
-          values=c("#d57d2c", "#d5b52c")) +  
-  geom_segment(aes(x = x_cen, y = y_cen, xend = NMDS1, yend = NMDS2), alpha = 0.9, show.legend = FALSE) +
+  geom_point(size = 3) +
+  scale_color_manual(name="Time point",values=c("#003a45", "#d5b52c")) +
+  geom_segment(aes(x = x_cen, y = y_cen, xend = NMDS1, yend = NMDS2), alpha = 0.6, show.legend = FALSE) +
   theme(
     axis.title = element_text(size = 12, face = "bold"),
     axis.text = element_text(size = 10),
@@ -320,11 +298,9 @@ phylo %>%
   mutate(y_cen = mean(NMDS2, na.rm = TRUE)) %>%
   ungroup() %>%
   ggplot(aes(x = NMDS1, y = NMDS2, color = treatment)) +
-  geom_point(size = 4) +
-  scale_color_manual(name="treatment",
-          breaks=c("Acclimation","Transplant"),
-          values=c("#d57d2c", "#d5b52c")) +
-  geom_segment(aes(x = x_cen, y = y_cen, xend = NMDS1, yend = NMDS2), alpha = 0.9, show.legend = FALSE) +
+  geom_point(size = 3) +
+  scale_color_manual(name="Time point",values=c("#003a45", "#d5b52c")) +
+  geom_segment(aes(x = x_cen, y = y_cen, xend = NMDS1, yend = NMDS2), alpha = 0.6, show.legend = FALSE) +
   theme(
     axis.title = element_text(size = 12, face = "bold"),
     axis.text = element_text(size = 10),
@@ -341,24 +317,18 @@ phylo %>%
 ## Alpha diversity
 
 ```{r filter_data_donor3, comment="", message=FALSE, warning=FALSE}
-sample_metadata <- sample_metadata %>%
-    mutate(treatment=case_when(
-    treatment %in% c("Transplant1", "Transplant2") ~ "Transplant",
-    TRUE ~ treatment
-  ))
-
 alpha_div_meta <- alpha_div %>%
   left_join(sample_metadata, by = join_by(sample == sample))%>%
-  filter(type == "Treatment" & treatment %in% c("Acclimation","Transplant"))
+  filter(type == "Cold_intervention" & treatment %in% c("Acclimation","Donor"))
 ```
 
 ```{r filter_data4, comment="", message=FALSE, warning=FALSE}
 samples_to_keep <- sample_metadata %>%
-  filter(type == "Treatment" & treatment %in% c("Acclimation", "Transplant")) %>% 
+  filter(type == "Cold_intervention" & treatment %in% c("Acclimation", "Donor")) %>% 
   select(sample) %>% 
   pull()
 subset_meta <- sample_metadata %>%
-  filter(type == "Treatment" & treatment %in% c("Acclimation", "Transplant"))
+  filter(type == "Cold_intervention" & treatment %in% c("Acclimation", "Donor"))
 ```
 
 ```{r alpha_div_plot_03, comment="", message=FALSE, warning=FALSE}
@@ -366,28 +336,21 @@ alpha_div %>%
   pivot_longer(-sample, names_to = "metric", values_to = "value") %>%
   left_join(., sample_metadata, by = "sample") %>%
   mutate(metric=factor(metric,levels=c("richness","neutral","phylogenetic"))) %>%
-  filter(type == "Treatment" & treatment %in% c("Acclimation", "Transplant")) %>% 
+  filter(type == "Cold_intervention" & treatment %in% c("Acclimation", "Donor")) %>% 
   ggplot(aes(y = value, x = treatment, color=treatment, fill=treatment)) +
-  geom_boxplot(outlier.shape = NA) +
-  geom_jitter(alpha=0.5) +
-  scale_color_manual(name="treatment",
-          breaks=c("Acclimation","Transplant"),
-          values=c('#008080', "#d5b52c")) +
-      scale_fill_manual(name="treatment",
-          breaks=c("Acclimation","Transplant"),
-          values=c('#00808050', "#d5b52c50")) +
-  facet_wrap(. ~ metric, scales = "free") +
+    geom_boxplot(width = 0.5,alpha=0.5 ,outlier.shape = NA, show.legend = FALSE) +
+  geom_jitter(width = 0.2, show.legend = FALSE) +
+  scale_color_manual(values=c("#003a45", "#d5b52c")) +
+  scale_fill_manual(values=c("#003a45", "#d5b52c")) +
+  facet_wrap( ~ metric, scales = "free")+
   theme_classic() +
   theme(
     strip.background = element_blank(),
     panel.grid.minor.x = element_line(size = .1, color = "grey"),
+    axis.text = element_text(size = 12),
+    axis.title.y = element_text(size = 14),
     axis.title.x = element_blank(),
-    axis.title.y = element_text(size=10),
-    axis.text.x = element_text(angle = 45, hjust = 1),
-    # Increase plot size
-    plot.title = element_text(size = 10),
-    axis.text = element_text(size = 8),
-    axis.title = element_text(size = 8)
+    strip.text = element_text(size = 16, lineheight = 0.6)
       ) +
   ylab("Alpha diversity")
 ```
@@ -477,9 +440,7 @@ richness %>%
   ungroup() %>%
   ggplot(aes(x = NMDS1, y = NMDS2, color = treatment)) +
   geom_point(size = 4) +
-  scale_color_manual(name="treatment",
-          breaks=c("Acclimation","Transplant"),
-          values=c('#008080', "#d5b52c")) +
+  scale_color_manual(name="Time point",values=c('#008080', "#d5b52c")) +
   geom_segment(aes(x = x_cen, y = y_cen, xend = NMDS1, yend = NMDS2), alpha = 0.9, show.legend = FALSE) +
   theme(
     axis.title = element_text(size = 12, face = "bold"),
@@ -502,9 +463,7 @@ neutral %>%
   ungroup() %>%
   ggplot(aes(x = NMDS1, y = NMDS2, color = treatment)) +
   geom_point(size = 4) +
-  scale_color_manual(name="treatment",
-          breaks=c("Acclimation","Transplant"),
-          values=c('#008080', "#d5b52c")) +  
+  scale_color_manual(name="Time point",values=c('#008080', "#d5b52c")) +
   geom_segment(aes(x = x_cen, y = y_cen, xend = NMDS1, yend = NMDS2), alpha = 0.9, show.legend = FALSE) +
   theme(
     axis.title = element_text(size = 12, face = "bold"),
@@ -527,9 +486,7 @@ phylo %>%
   ungroup() %>%
   ggplot(aes(x = NMDS1, y = NMDS2, color = treatment)) +
   geom_point(size = 4) +
-  scale_color_manual(name="treatment",
-          breaks=c("Acclimation","Transplant"),
-          values=c('#008080', "#d5b52c")) +
+  scale_color_manual(name="Time point",values=c('#008080', "#d5b52c")) +
   geom_segment(aes(x = x_cen, y = y_cen, xend = NMDS1, yend = NMDS2), alpha = 0.9, show.legend = FALSE) +
   theme(
     axis.title = element_text(size = 12, face = "bold"),

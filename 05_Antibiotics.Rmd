@@ -1,6 +1,6 @@
 # Does the antibiotic administration change the microbial community?
 ```{r data_antibiotics, comment="", message=FALSE, warning=FALSE, echo=FALSE}
-load("data/objects_2003.Rdata")
+load("data/objects_2803.Rdata")
 load("data/beta_08032025.Rdata")
 load("data/alpha_08032025.Rdata")
 ```
@@ -13,8 +13,6 @@ alpha_div_meta <- alpha_div %>%
 ```
 ```{r alpha_div_plot_1, comment="", message=FALSE, warning=FALSE, fig.height=12, fig.width=12, fig.fullwidth=TRUE}
 label_map <- c(
-  "Cold_wet" = "Cold population", 
-  "Hot_dry" = "Warm-population",
   "richness" = "Species Richness",
   "neutral" = "Neutral Diversity",
   "phylogenetic" = "Phylogenetic Diversity")
@@ -22,31 +20,23 @@ label_map <- c(
 alpha_div %>%
   pivot_longer(-sample, names_to = "metric", values_to = "value") %>%
   left_join(., sample_metadata, by = "sample") %>%
-  mutate(metric=factor(metric,levels=c("richness","neutral","phylogenetic"))) %>%
-  filter(time_point %in% c("Acclimation", "Antibiotics") ) %>% 
+  mutate(metric = factor(metric, levels = c("richness", "neutral", "phylogenetic")),
+  time_point = factor(time_point, levels = c("Wild", "Acclimation"))) %>%
+  filter(time_point %in% c("Wild", "Acclimation")) %>% 
   ggplot(aes(y = value, x = time_point, color=Population, fill=Population)) +
-  geom_boxplot(outlier.shape = NA) +
-  geom_jitter(alpha=0.5) +
-  scale_color_manual(name="Population",
-          breaks=c("Cold_wet","Hot_dry"),
-          labels=c("Cold","Hot"),
-          values=c('#008080', "#d57d2c")) +
-      scale_fill_manual(name="Population",
-          breaks=c("Cold_wet","Hot_dry"),
-          labels=c("Cold","Hot"),
-          values=c('#00808050', "#d57d2c50")) +
+  geom_boxplot(width = 0.5,alpha=0.5, outlier.shape = NA, show.legend = FALSE) +
+  geom_jitter(width = 0.2,show.legend = FALSE) +
+  scale_color_manual(values=c('#008080', "#d57d2c")) +
+  scale_fill_manual(values=c('#008080', "#d57d2c")) +
   facet_grid(metric ~ Population, scales = "free_y", labeller = labeller(metric = label_map, type = label_map))+
   theme_classic() +
   theme(
     strip.background = element_blank(),
     panel.grid.minor.x = element_line(size = .1, color = "grey"),
     axis.title.x = element_blank(),
-    axis.title.y = element_text(size=10),
-    axis.text.x = element_text(angle = 45, hjust = 1),
-    # Increase plot size
-    plot.title = element_text(size = 10),
-    axis.text = element_text(size = 8),
-    axis.title = element_text(size = 8)
+    axis.text = element_text(size = 14),
+    axis.title = element_text(size = 14),
+    strip.text = element_text(size = 18, lineheight = 0.6),
       ) +
   ylab("Alpha diversity")
 ```
@@ -151,10 +141,13 @@ CAP_df <- as.data.frame(vegan::scores(cca_ord, display = "sites")) %>%
 
 biplot_scores <- as.data.frame(vegan::scores(cca_ord, display = "bp")) %>%
   rownames_to_column("Variable")
-biplot_scores$Variable <- recode(biplot_scores$Variable, 
-                                 "subset_meta$time_pointAntibiotics" = "Antibiotics",
-                                 "subset_meta$PopulationHot_dry"="Warm population",
-                                 "subset_meta$time_pointAntibiotics:subset_meta$PopulationHot_dry"="Interaction Wam population")
+biplot_scores$Variable <- recode(
+  biplot_scores$Variable,
+  "subset_meta$time_pointAntibiotics" = "Antibiotics",
+  "subset_meta$PopulationWarm" = "Warm population",
+  "subset_meta$time_pointAntibiotics:subset_meta$PopulationWarm" =
+    "Interaction Wam population"
+)
 
 CAP_df %>%
   group_by(Population, time_point) %>%
@@ -162,14 +155,8 @@ CAP_df %>%
   mutate(y_cen = mean(CAP2, na.rm = TRUE)) %>%
   ungroup() %>%
   ggplot(., aes(x=CAP1,y=CAP2, color=Population,shape = time_point)) +
-  scale_color_manual(name="Population",
-          breaks=c("Cold_wet","Hot_dry"),
-          labels=c("Cold","Hot"),
-          values=c('#008080', "#d57d2c")) +
-      scale_fill_manual(name="Population",
-          breaks=c("Cold_wet","Hot_dry"),
-          labels=c("Cold","Hot"),
-          values=c('#00808050', "#d57d2c50")) +
+  scale_color_manual(values=c('#008080', "#d57d2c")) +
+  scale_fill_manual(values=c('#00808050', "#d57d2c50")) +
   geom_point(size=2) +
   geom_hline(yintercept = 0, linetype = "dotted") + 
   geom_vline(xintercept = 0, linetype = "dotted") +
@@ -191,10 +178,13 @@ CAP_df <- as.data.frame(vegan::scores(cca_ord, display = "sites")) %>%
 
 biplot_scores <- as.data.frame(vegan::scores(cca_ord, display = "bp")) %>%
   rownames_to_column("Variable")
-biplot_scores$Variable <- recode(biplot_scores$Variable, 
-                                  "subset_meta$time_pointAntibiotics" = "Antibiotics",
-                                 "subset_meta$PopulationHot_dry"="Warm population",
-                                 "subset_meta$time_pointAntibiotics:subset_meta$PopulationHot_dry"="Interaction Wam population")
+biplot_scores$Variable <- recode(
+  biplot_scores$Variable,
+  "subset_meta$time_pointAntibiotics" = "Antibiotics",
+  "subset_meta$PopulationWarm" = "Warm population",
+  "subset_meta$time_pointAntibiotics:subset_meta$PopulationWarm" =
+    "Interaction Wam population"
+)
 
 CAP_df %>%
   group_by(Population, time_point) %>%
@@ -202,14 +192,8 @@ CAP_df %>%
   mutate(y_cen = mean(CAP2, na.rm = TRUE)) %>%
   ungroup() %>%
   ggplot(., aes(x=CAP1,y=CAP2, color=Population,shape = time_point)) +
-  scale_color_manual(name="Population",
-          breaks=c("Cold_wet","Hot_dry"),
-          labels=c("Cold","Hot"),
-          values=c('#008080', "#d57d2c")) +
-      scale_fill_manual(name="Population",
-          breaks=c("Cold_wet","Hot_dry"),
-          labels=c("Cold","Hot"),
-          values=c('#00808050', "#d57d2c50"))+
+  scale_color_manual(values=c('#008080', "#d57d2c")) +
+    scale_fill_manual(values=c('#00808050', "#d57d2c50"))+
   geom_point(size=2) +
   geom_hline(yintercept = 0, linetype = "dotted") + 
   geom_vline(xintercept = 0, linetype = "dotted") +
@@ -232,10 +216,13 @@ CAP_df <- as.data.frame(vegan::scores(cca_ord, display = "sites")) %>%
 
 biplot_scores <- as.data.frame(vegan::scores(cca_ord, display = "bp")) %>%
   rownames_to_column("Variable")
-biplot_scores$Variable <- recode(biplot_scores$Variable, 
-                                  "subset_meta$time_pointAntibiotics" = "Antibiotics",
-                                 "subset_meta$PopulationHot_dry"="Warm population",
-                                 "subset_meta$time_pointAntibiotics:subset_meta$PopulationHot_dry"="Interaction Wam population")
+biplot_scores$Variable <- recode(
+  biplot_scores$Variable,
+  "subset_meta$time_pointAntibiotics" = "Antibiotics",
+  "subset_meta$PopulationWarm" = "Warm population",
+  "subset_meta$time_pointAntibiotics:subset_meta$PopulationWarm" =
+    "Interaction Wam population"
+)
 
 CAP_df %>%
   group_by(type, time_point) %>%
@@ -243,14 +230,8 @@ CAP_df %>%
   mutate(y_cen = mean(CAP2, na.rm = TRUE)) %>%
   ungroup() %>%
   ggplot(., aes(x=CAP1,y=CAP2, color=Population,shape = time_point)) +
-  scale_color_manual(name="Population",
-          breaks=c("Cold_wet","Hot_dry"),
-          labels=c("Cold","Hot"),
-          values=c('#008080', "#d57d2c")) +
-      scale_fill_manual(name="Population",
-          breaks=c("Cold_wet","Hot_dry"),
-          labels=c("Cold","Hot"),
-          values=c('#00808050', "#d57d2c50")) +
+  scale_color_manual(values=c('#008080', "#d57d2c")) +
+  scale_fill_manual(values=c('#00808050', "#d57d2c50")) +
   geom_point(size=2) +
   geom_hline(yintercept = 0, linetype = "dotted") + 
   geom_vline(xintercept = 0, linetype = "dotted") +
@@ -269,16 +250,16 @@ CAP_df %>%
 #### Structural zeros
 ```{r struct_zero, comment="", message=FALSE, warning=FALSE}
 acclimation_samples <- sample_metadata %>%
-  filter(Population == "Cold_wet" & time_point == "Acclimation") %>% 
+  filter(Population == "Cold" & time_point == "Acclimation") %>% 
   dplyr::select(sample) %>%
   pull()
 
 antibiotics_samples <- sample_metadata %>%
-  filter(Population == "Cold_wet" & time_point == "Antibiotics") %>% 
+  filter(Population == "Cold" & time_point == "Antibiotics") %>% 
   dplyr::select(sample) %>% pull()
 
 subset_meta <- sample_metadata %>%
-  filter(Population == "Cold_wet" & time_point %in% c("Antibiotics","Acclimation"))
+  filter(Population == "Cold" & time_point %in% c("Antibiotics","Acclimation"))
 
 structural_zeros <- genome_counts_filt %>% 
   select(one_of(c("genome",subset_meta$sample))) %>%
@@ -329,7 +310,7 @@ GIFTs_elements_filtered <- as.data.frame(GIFTs_elements_filtered) %>%
   select_if(~ !is.numeric(.) || sum(.) != 0)
 
 sample_sub <- sample_metadata %>%
-  filter(Population == "Cold_wet" & treatment %in% c("Acclimation", "Antibiotics"))
+  filter(Population == "Cold" & time_point %in% c("Acclimation", "Antibiotics"))
 
 genome_counts_row <- genome_counts_filt %>%
   mutate_at(vars(-genome),~./sum(.)) %>% 
@@ -345,16 +326,16 @@ GIFTs_elements_community <- to.community(GIFTs_elements_filtered,genome_counts_r
 element_gift <- GIFTs_elements_community %>% 
   as.data.frame() %>% 
   rownames_to_column(., "sample") %>% 
-  left_join(., sample_metadata[c(12,13)], by=join_by("sample"=="sample"))
+  left_join(., sample_metadata[c(8,9)], by=join_by("sample"=="sample"))
 ```
 
 ```{r commun_wilcox_struc_acclim_antib, comment="", message=FALSE, warning=FALSE}
 uniqueGIFT_db<- unique(GIFT_db[c(2,4,5,6)]) %>% unite("Function",Function:Element, sep= "_", remove=FALSE)
 
 element_gift %>%
-    pivot_longer(-c(sample,treatment), names_to = "trait", values_to = "value") %>%
+    pivot_longer(-c(sample,time_point), names_to = "trait", values_to = "value") %>%
     group_by(trait) %>%
-    summarise(p_value = wilcox.test(value ~ treatment)$p.value) %>%
+    summarise(p_value = wilcox.test(value ~ time_point)$p.value) %>%
     mutate(p_adjust=p.adjust(p_value, method="BH")) %>%
     filter(p_adjust < 0.05)
 ```
@@ -362,7 +343,7 @@ element_gift %>%
 #### Differential abundance analysis: composition
 ```{r phylo_acclim_antib, comment="", message=FALSE, warning=FALSE}
 phylo_samples <- sample_metadata %>%
-  filter(Population == "Cold_wet" & time_point %in% c("Acclimation", "Antibiotics") )%>% 
+  filter(Population == "Cold" & time_point %in% c("Acclimation", "Antibiotics") )%>% 
   column_to_rownames("sample") %>% 
   sample_data()
 phylo_genome <- genome_counts_filt %>% 
@@ -382,7 +363,7 @@ phylo_taxonomy <- genome_metadata %>%
 physeq_genome_filtered <- phyloseq(phylo_genome, phylo_taxonomy, phylo_samples)
 ```
 ```{r ancom_rand_accl_ant, comment="", message=FALSE, warning=FALSE}
-ancom_rand_output = ancombc2(data = physeq_genome_filtered, 
+ancom_rand_output_antib_accl_2803 = ancombc2(data = physeq_genome_filtered, 
                   assay_name = "counts", 
                   tax_level = NULL,
                   fix_formula = "time_point",
@@ -410,12 +391,12 @@ ancom_rand_output = ancombc2(data = physeq_genome_filtered,
 ```
 
 ```{r save_ancombc1, warning=FALSE, comments="", message=FALSE}
-save(ancom_rand_output, 
-     file = "data/ancombc_antib_accl_2003.Rdata")
+save(ancom_rand_output_antib_accl_2803, 
+     file = "data/ancombc_antib_accl_2803.Rdata")
 ```
 
 ```{r load_ancombc, warning=FALSE, comments="", message=FALSE, eval=FALSE}
-load("data/ancombc_antib_accl_2003.Rdata")
+load("data/ancombc_antib_accl_2803.Rdata")
 ```
 
 ```{r ancom_rand1, comment="", message=FALSE, warning=FALSE}
@@ -423,7 +404,7 @@ taxonomy <- data.frame(physeq_genome_filtered@tax_table) %>%
   rownames_to_column(., "taxon") %>%
   mutate_at(vars(order, phylum, family, genus, species), ~ str_replace(., "[dpcofgs]__", ""))
 
-ancombc_rand_table_mag <- ancom_rand_output$res %>%
+ancombc_rand_table_mag <- ancom_rand_output_antib_accl_2803$res %>%
   dplyr::select(taxon, lfc_time_pointAntibiotics, p_time_pointAntibiotics) %>%
   filter(p_time_pointAntibiotics < 0.05) %>%
   dplyr::arrange(p_time_pointAntibiotics) %>%
@@ -450,11 +431,10 @@ tax_color <- merge(tax_table, colors_alphabetic, by="phylum")%>%
 ```{r ancombc_rand_plot_phy1, comment="", message=FALSE, warning=FALSE, fig.height=10, fig.width=8, fig.fullwidth=TRUE}
 ancombc_rand_table_mag%>%
       mutate(genome=factor(taxon,levels=ancombc_rand_table_mag$taxon)) %>%
-ggplot(., aes(x=lfc_time_pointAntibiotics, y=forcats::fct_reorder(genome,lfc_time_pointAntibiotics), fill=phylum)) + #forcats::fct_rev()
+ggplot(., aes(x=lfc_time_pointAntibiotics, y=forcats::fct_reorder(genome,lfc_time_pointAntibiotics), fill=phylum)) + 
   geom_col() + 
   scale_fill_manual(values=tax_color) + 
   geom_hline(yintercept=0) + 
-#  coord_flip()+
   theme(panel.background = element_blank(),
         axis.line = element_line(size = 0.5, linetype = "solid", colour = "black"),
         axis.text.x = element_text(size = 12),
@@ -467,6 +447,9 @@ ggplot(., aes(x=lfc_time_pointAntibiotics, y=forcats::fct_reorder(genome,lfc_tim
   ylab("Species")+
   guides(fill=guide_legend(title="Phylum"))
 ```
+MAGs enriched in acclimation on the left side and in antibiotics on the right side
+
+
 
 ***Phyla of the significant MAGs***
 
@@ -497,7 +480,7 @@ ancombc_rand_table_mag%>%
 #### Differences in the functional capacity
 ```{r gift_acclim_antib, comment="", message=FALSE, warning=FALSE}
 sample_sub <- sample_metadata %>%
-  filter(Population == "Cold_wet" & treatment %in% c("Acclimation", "Antibiotics"))
+  filter(Population == "Cold" & time_point %in% c("Acclimation", "Antibiotics"))
 genome_counts_filtered <- genome_counts_filt %>% 
     select(one_of(c("genome",sample_sub$sample))) 
   
@@ -527,7 +510,7 @@ GIFTs_elements_community %>%
   rowMeans() %>%
   as_tibble(., rownames = "sample") %>%
   left_join(sample_metadata, by = join_by(sample == sample)) %>%
-  group_by(treatment) %>%
+  group_by(time_point) %>%
   summarise(MCI = mean(value), sd = sd(value))
 
 MCI <- GIFTs_elements_community %>%
@@ -536,23 +519,23 @@ MCI <- GIFTs_elements_community %>%
   left_join(sample_metadata, by = join_by(sample == sample)) 
 
 shapiro.test(MCI$value)
-wilcox.test(value ~ treatment, data=MCI)
+wilcox.test(value ~ time_point, data=MCI)
 ```
 
 ```{r comunity_elem_acclim_antib, comment="", message=FALSE, warning=FALSE}
 element_gift <- GIFTs_elements_community %>% 
   as.data.frame() %>% 
   rownames_to_column(., "sample") %>% 
-  left_join(., sample_metadata[c(12,13)], by=join_by("sample"=="sample"))
+  left_join(., sample_metadata[c(8,9)], by=join_by("sample"=="sample"))
 ```
 
 ```{r commun_wilcox_elem_acclim_antib, comment="", message=FALSE, warning=FALSE}
 uniqueGIFT_db<- unique(GIFT_db[c(2,4,5,6)]) %>% unite("Function",Function:Element, sep= "_", remove=FALSE)
 
 significant_elements <- element_gift %>%
-    pivot_longer(-c(sample,treatment), names_to = "trait", values_to = "value") %>%
+    pivot_longer(-c(sample,time_point), names_to = "trait", values_to = "value") %>%
     group_by(trait) %>%
-    summarise(p_value = wilcox.test(value ~ treatment)$p.value) %>%
+    summarise(p_value = wilcox.test(value ~ time_point)$p.value) %>%
     mutate(p_adjust=p.adjust(p_value, method="BH")) %>%
     filter(p_adjust < 0.05)%>%
   left_join(.,uniqueGIFT_db[c(1,3)],by = join_by(trait == Code_element))
@@ -570,11 +553,11 @@ element_gift_filt <- subset(element_gift_t, trait %in% significant_elements$trai
   as.data.frame() %>%
   mutate_if(is.character, as.numeric)  %>%
   rownames_to_column(., "sample")%>% 
-  left_join(., sample_metadata[c(12,13)], by = join_by(sample == sample))
+  left_join(., sample_metadata[c(8,9)], by = join_by(sample == sample))
 
 difference_table <- element_gift_filt %>%
   select(-sample) %>%
-  group_by(treatment) %>%
+  group_by(time_point) %>%
   summarise(across(everything(), mean)) %>%
   t() %>%
   row_to_names(row_number = 1) %>%
@@ -591,7 +574,7 @@ difference_table <- element_gift_filt %>%
 difference_table %>%
   ggplot(aes(x=forcats::fct_reorder(Function,Difference), y=Difference, fill=group_color)) + 
   geom_col() +
-  scale_fill_manual(values=c('#008080', '#00808050')) +
+  scale_fill_manual(values=c("#003a45",'#008080')) +
   geom_hline(yintercept=0) + 
   coord_flip()+
   theme(axis.text = element_text(size = 10),
@@ -602,7 +585,7 @@ difference_table %>%
                                 colour = "grey"))+
   xlab("Microbial Functional Capacity") + 
   ylab("Mean difference")+
-  labs(fill="Treatment")
+  labs(fill="time_point")
 ```
 
 ##### Community functions differences
@@ -613,7 +596,7 @@ GIFTs_functions_community %>%
   rowMeans() %>%
   as_tibble(., rownames = "sample") %>%
   left_join(sample_metadata, by = join_by(sample == sample)) %>%
-  group_by(treatment) %>%
+  group_by(time_point) %>%
   summarise(MCI = mean(value), sd = sd(value))
 
 MCI <- GIFTs_functions_community %>%
@@ -622,14 +605,14 @@ MCI <- GIFTs_functions_community %>%
   left_join(sample_metadata, by = join_by(sample == sample)) 
 
 shapiro.test(MCI$value)
-wilcox.test(value ~ treatment, data=MCI)
+wilcox.test(value ~ time_point, data=MCI)
 ```
 
 ```{r comunity_func_Acci_anti, comment="", message=FALSE, warning=FALSE}
 function_gift <- GIFTs_functions_community %>% 
   as.data.frame() %>% 
   rownames_to_column(., "sample") %>% 
-  merge(., sample_metadata[c(12,13)], by="sample")
+  merge(., sample_metadata[c(8,9)], by="sample")
 ```
 
 ```{r commun_wilcox_func, comment="", message=FALSE, warning=FALSE}
@@ -637,16 +620,16 @@ unique_funct_db<- GIFT_db[c(3,4,5)] %>%
   distinct(Code_function, .keep_all = TRUE)
 
 significant_functional <- function_gift %>%
-  pivot_longer(-c(sample,treatment), names_to = "trait", values_to = "value") %>%
+  pivot_longer(-c(sample,time_point), names_to = "trait", values_to = "value") %>%
   group_by(trait) %>%
-  summarise(p_value = wilcox.test(value ~ treatment)$p.value) %>%
+  summarise(p_value = wilcox.test(value ~ time_point)$p.value) %>%
   mutate(p_adjust=p.adjust(p_value, method="BH")) %>%
   filter(p_adjust < 0.05)%>%
   left_join(.,unique_funct_db[c(1,3)],by = join_by(trait == Code_function))
 ```
 ```{r  function_sig, comment="", echo=FALSE, message=FALSE, warning=FALSE}
 function_gift_t <- function_gift  %>% 
-  select(-treatment)  %>% 
+  select(-time_point)  %>% 
   t() %>%
   row_to_names(row_number = 1) %>%
   as.data.frame() %>%
@@ -659,13 +642,13 @@ function_gift_filt <- subset(function_gift_t, trait %in% significant_functional$
   as.data.frame() %>%
   mutate_if(is.character, as.numeric)  %>%
   rownames_to_column(., "sample")%>% 
-  left_join(., sample_metadata[c(12,13)], by = join_by(sample == sample))
+  left_join(., sample_metadata[c(8,9)], by = join_by(sample == sample))
 
 uniqueGIFT_func<- unique(GIFT_db[c(3,5)])
 
 difference_table <- function_gift_filt %>%
   select(-sample) %>%
-  group_by(treatment) %>%
+  group_by(time_point) %>%
   summarise(across(everything(), mean)) %>%
   t() %>%
   row_to_names(row_number = 1) %>%
@@ -674,7 +657,7 @@ difference_table <- function_gift_filt %>%
   rownames_to_column(., "Code_function") %>%
   left_join(.,uniqueGIFT_func,by = join_by(Code_function == Code_function)) %>% 
   mutate(Difference=Acclimation-Antibiotics)%>% 
-  mutate(treatment = ifelse(Difference <0, "Antibiotics","Acclimation")) 
+  mutate(time_point = ifelse(Difference <0, "Antibiotics","Acclimation")) 
 
 difference_table%>% 
   arrange(-Difference) %>% 
@@ -686,16 +669,16 @@ difference_table%>%
 #### Structural zeros
 ```{r struct_zero_warm, comment="", message=FALSE, warning=FALSE}
 acclimation_samples <- sample_metadata %>%
-  filter(Population == "Hot_dry" & time_point == "Acclimation") %>% 
+  filter(Population == "Warm" & time_point == "Acclimation") %>% 
   dplyr::select(sample) %>%
   pull()
 
 antibiotics_samples <- sample_metadata %>%
-  filter(Population == "Hot_dry" & time_point == "Antibiotics") %>% 
+  filter(Population == "Warm" & time_point == "Antibiotics") %>% 
   dplyr::select(sample) %>% pull()
 
 sample_sub <- sample_metadata %>%
-  filter(Population == "Hot_dry" & treatment %in% c("Acclimation", "Antibiotics"))
+  filter(Population == "Warm" & time_point %in% c("Acclimation", "Antibiotics"))
 
 structural_zeros <- genome_counts_filt %>% 
   select(one_of(c("genome",sample_sub$sample))) %>%
@@ -759,16 +742,16 @@ GIFTs_elements_community <- to.community(GIFTs_elements_filtered,genome_counts_r
 element_gift <- GIFTs_elements_community %>% 
   as.data.frame() %>% 
   rownames_to_column(., "sample") %>% 
-  left_join(., sample_metadata[c(12,13)], by=join_by("sample"=="sample"))
+  left_join(., sample_metadata[c(8,9)], by=join_by("sample"=="sample"))
 ```
 
 ```{r commun_wilcox_struc_acclim_antib_warm, comment="", message=FALSE, warning=FALSE}
 uniqueGIFT_db<- unique(GIFT_db[c(2,4,5,6)]) %>% unite("Function",Function:Element, sep= "_", remove=FALSE)
 
 element_gift %>%
-    pivot_longer(-c(sample,treatment), names_to = "trait", values_to = "value") %>%
+    pivot_longer(-c(sample,time_point), names_to = "trait", values_to = "value") %>%
     group_by(trait) %>%
-    summarise(p_value = wilcox.test(value ~ treatment)$p.value) %>%
+    summarise(p_value = wilcox.test(value ~ time_point)$p.value) %>%
     mutate(p_adjust=p.adjust(p_value, method="BH")) %>%
     filter(p_adjust < 0.05)
 ```
@@ -776,7 +759,7 @@ element_gift %>%
 #### Differential abundance analysis: composition
 ```{r phylo_acclim_antib_warm, comment="", message=FALSE, warning=FALSE}
 phylo_samples <- sample_metadata %>%
-  filter(Population == "Hot_dry" & time_point %in% c("Acclimation", "Antibiotics") )%>% 
+  filter(Population == "Warm" & time_point %in% c("Acclimation", "Antibiotics") )%>% 
   column_to_rownames("sample") %>% 
   sample_data()
 phylo_genome <- genome_counts_filt %>% 
@@ -797,7 +780,7 @@ physeq_genome_filtered <- phyloseq(phylo_genome, phylo_taxonomy, phylo_samples)
 ```
 
 ```{r ancom_rand_accl_ant_warm, comment="", message=FALSE, warning=FALSE}
-ancom_rand_output = ancombc2(data = physeq_genome_filtered, 
+ancom_rand_output_2803 = ancombc2(data = physeq_genome_filtered, 
                   assay_name = "counts", 
                   tax_level = NULL,
                   fix_formula = "time_point",
@@ -826,12 +809,12 @@ ancom_rand_output = ancombc2(data = physeq_genome_filtered,
 ```
 
 ```{r save_ancombc1_warm, warning=FALSE, comments="", message=FALSE}
-save(ancom_rand_output, 
-     file = "data/ancombc_antib_accl_warm_2003.Rdata")
+save(ancom_rand_output_2803, 
+     file = "data/ancombc_antib_accl_warm_2803.Rdata")
 ```
 
 ```{r load_ancombc_warm, warning=FALSE, comments="", message=FALSE, eval=FALSE}
-load("data/ancombc_antib_accl_warm_2003.Rdata")
+load("data/ancombc_antib_accl_warm_2803.Rdata")
 ```
 
 ```{r ancom_rand1_warm, comment="", message=FALSE, warning=FALSE}
@@ -839,7 +822,7 @@ taxonomy <- data.frame(physeq_genome_filtered@tax_table) %>%
   rownames_to_column(., "taxon") %>%
   mutate_at(vars(order, phylum, family, genus, species), ~ str_replace(., "[dpcofgs]__", ""))
 
-ancombc_rand_table_mag <- ancom_rand_output$res %>%
+ancombc_rand_table_mag <- ancom_rand_output_2803$res %>%
   dplyr::select(taxon, lfc_time_pointAntibiotics, p_time_pointAntibiotics) %>%
   filter(p_time_pointAntibiotics < 0.05) %>%
   dplyr::arrange(p_time_pointAntibiotics) %>%
@@ -882,6 +865,9 @@ ggplot(., aes(x=lfc_time_pointAntibiotics, y=forcats::fct_reorder(genome,lfc_tim
   ylab("Species")+
   guides(fill=guide_legend(title="Phylum"))
 ```
+MAGs enriched in acclimation on the left side and in antibiotics on the right side
+
+
 
 ***Phyla of the significant MAGs***
 Acclimation
@@ -902,10 +888,11 @@ ancombc_rand_table_mag%>%
   filter(lfc_time_pointAntibiotics>0)  %>% 
   select(phylum, genus, species)
 ```
+
 #### Differences in the functional capacity
 ```{r gift_acclim_antib_warm, comment="", message=FALSE, warning=FALSE}
 sample_sub <- sample_metadata %>%
-  filter(Population == "Hot_dry" & treatment %in% c("Acclimation", "Antibiotics"))
+  filter(Population == "Warm" & time_point %in% c("Acclimation", "Antibiotics"))
 
 genome_counts_filtered <- genome_counts_filt %>% 
     select(one_of(c("genome",sample_sub$sample)))
@@ -936,7 +923,7 @@ GIFTs_elements_community %>%
   rowMeans() %>%
   as_tibble(., rownames = "sample") %>%
   left_join(sample_metadata, by = join_by(sample == sample)) %>%
-  group_by(treatment) %>%
+  group_by(time_point) %>%
   summarise(MCI = mean(value), sd = sd(value))
 
 MCI <- GIFTs_elements_community %>%
@@ -945,23 +932,23 @@ MCI <- GIFTs_elements_community %>%
   left_join(sample_metadata, by = join_by(sample == sample)) 
 
 shapiro.test(MCI$value)
-wilcox.test(value ~ treatment, data=MCI)
+wilcox.test(value ~ time_point, data=MCI)
 ```
 
 ```{r comunity_elem_acclim_antib_warm, comment="", message=FALSE, warning=FALSE}
 element_gift <- GIFTs_elements_community %>% 
   as.data.frame() %>% 
   rownames_to_column(., "sample") %>% 
-  left_join(., sample_metadata[c(12,13)], by=join_by("sample"=="sample"))
+  left_join(., sample_metadata[c(8,9)], by=join_by("sample"=="sample"))
 ```
 
 ```{r commun_wilcox_elem_acclim_antib_warm, comment="", message=FALSE, warning=FALSE}
 uniqueGIFT_db<- unique(GIFT_db[c(2,4,5,6)]) %>% unite("Function",Function:Element, sep= "_", remove=FALSE)
 
 significant_elements <- element_gift %>%
-    pivot_longer(-c(sample,treatment), names_to = "trait", values_to = "value") %>%
+    pivot_longer(-c(sample,time_point), names_to = "trait", values_to = "value") %>%
     group_by(trait) %>%
-    summarise(p_value = wilcox.test(value ~ treatment)$p.value) %>%
+    summarise(p_value = wilcox.test(value ~ time_point)$p.value) %>%
     mutate(p_adjust=p.adjust(p_value, method="BH")) %>%
     filter(p_adjust < 0.05)%>%
   left_join(.,uniqueGIFT_db[c(1,3)],by = join_by(trait == Code_element))
@@ -979,11 +966,11 @@ element_gift_filt <- subset(element_gift_t, trait %in% significant_elements$trai
   as.data.frame() %>%
   mutate_if(is.character, as.numeric)  %>%
   rownames_to_column(., "sample")%>% 
-  left_join(., sample_metadata[c(12,13)], by = join_by(sample == sample))
+  left_join(., sample_metadata[c(8,9)], by = join_by(sample == sample))
 
 difference_table <- element_gift_filt %>%
   select(-sample) %>%
-  group_by(treatment) %>%
+  group_by(time_point) %>%
   summarise(across(everything(), mean)) %>%
   t() %>%
   row_to_names(row_number = 1) %>%
@@ -1000,8 +987,7 @@ difference_table <- element_gift_filt %>%
 difference_table %>%
   ggplot(aes(x=forcats::fct_reorder(Function,Difference), y=Difference, fill=group_color)) + 
   geom_col() +
-#  geom_point(size=4) + 
-  scale_fill_manual(values=c("#d57d2c50","#d57d2c")) +
+  scale_fill_manual(values=c("#003a45",'#008080')) +
   geom_hline(yintercept=0) + 
   coord_flip()+
   theme(axis.text = element_text(size = 10),
@@ -1012,7 +998,7 @@ difference_table %>%
                                 colour = "grey"))+
   xlab("Microbial Functional Capacity") + 
   ylab("Mean difference")+
-  labs(fill="Treatment")
+  labs(fill="time_point")
 ```
 
 ##### Community functions differences
@@ -1023,7 +1009,7 @@ GIFTs_functions_community %>%
   rowMeans() %>%
   as_tibble(., rownames = "sample") %>%
   left_join(sample_metadata, by = join_by(sample == sample)) %>%
-  group_by(treatment) %>%
+  group_by(time_point) %>%
   summarise(MCI = mean(value), sd = sd(value))
 
 MCI <- GIFTs_functions_community %>%
@@ -1032,14 +1018,14 @@ MCI <- GIFTs_functions_community %>%
   left_join(sample_metadata, by = join_by(sample == sample)) 
 
 shapiro.test(MCI$value)
-wilcox.test(value ~ treatment, data=MCI)
+wilcox.test(value ~ time_point, data=MCI)
 ```
 
 ```{r comunity_func_Acci_anti_warm, comment="", message=FALSE, warning=FALSE}
 function_gift <- GIFTs_functions_community %>% 
   as.data.frame() %>% 
   rownames_to_column(., "sample") %>% 
-  merge(., sample_metadata[c(12,13)], by="sample")
+  merge(., sample_metadata[c(8,9)], by="sample")
 ```
 
 ```{r commun_wilcox_func_warm, comment="", message=FALSE, warning=FALSE}
@@ -1047,16 +1033,16 @@ unique_funct_db<- GIFT_db[c(3,4,5)] %>%
   distinct(Code_function, .keep_all = TRUE)
 
 significant_functional <- function_gift %>%
-  pivot_longer(-c(sample,treatment), names_to = "trait", values_to = "value") %>%
+  pivot_longer(-c(sample,time_point), names_to = "trait", values_to = "value") %>%
   group_by(trait) %>%
-  summarise(p_value = wilcox.test(value ~ treatment)$p.value) %>%
+  summarise(p_value = wilcox.test(value ~ time_point)$p.value) %>%
   mutate(p_adjust=p.adjust(p_value, method="BH")) %>%
   filter(p_adjust < 0.05)%>%
   left_join(.,unique_funct_db[c(1,3)],by = join_by(trait == Code_function))
 ```
 ```{r  function_sig_warm, comment="", echo=FALSE, message=FALSE, warning=FALSE}
 function_gift_t <- function_gift  %>% 
-  select(-treatment)  %>% 
+  select(-time_point)  %>% 
   t() %>%
   row_to_names(row_number = 1) %>%
   as.data.frame() %>%
@@ -1069,13 +1055,13 @@ function_gift_filt <- subset(function_gift_t, trait %in% significant_functional$
   as.data.frame() %>%
   mutate_if(is.character, as.numeric)  %>%
   rownames_to_column(., "sample")%>% 
-  left_join(., sample_metadata[c(12,13)], by = join_by(sample == sample))
+  left_join(., sample_metadata[c(8,9)], by = join_by(sample == sample))
 
 uniqueGIFT_func<- unique(GIFT_db[c(3,5)])
 
 difference_table <- function_gift_filt %>%
   select(-sample) %>%
-  group_by(treatment) %>%
+  group_by(time_point) %>%
   summarise(across(everything(), mean)) %>%
   t() %>%
   row_to_names(row_number = 1) %>%
@@ -1084,7 +1070,7 @@ difference_table <- function_gift_filt %>%
   rownames_to_column(., "Code_function") %>%
   left_join(.,uniqueGIFT_func,by = join_by(Code_function == Code_function)) %>% 
   mutate(Difference=Acclimation-Antibiotics)%>% 
-  mutate(treatment = ifelse(Difference <0, "Antibiotics","Acclimation")) 
+  mutate(time_point = ifelse(Difference <0, "Antibiotics","Acclimation")) 
 
 difference_table%>% 
   arrange(-Difference) %>% 
@@ -1136,29 +1122,19 @@ alpha_div %>%
   filter(metric!="phylogenetic") %>%
   filter(time_point == "Antibiotics" ) %>% 
   ggplot(aes(y = value, x = Population, color=Population, fill=Population)) +
-  geom_boxplot(outlier.shape = NA) +
-  geom_jitter(alpha=0.5) +
-  scale_color_manual(name="Population",
-          breaks=c("Cold_wet","Hot_dry"),
-          labels=c("Cold","Hot"),
-          values=c('#008080', "#d57d2c")) +
-      scale_fill_manual(name="Population",
-          breaks=c("Cold_wet","Hot_dry"),
-          labels=c("Cold","Hot"),
-          values=c('#00808050', "#d57d2c50")) +
+  geom_boxplot(width = 0.5,alpha=0.5 ,outlier.shape = NA, show.legend = FALSE) +
+  geom_jitter(width = 0.2, show.legend = FALSE) +
+  scale_color_manual(values=c('#008080', "#d57d2c")) +
+  scale_fill_manual(values=c('#008080', "#d57d2c")) +
   stat_compare_means(method = "t.test", show.legend = F, size = 3, label.x = c(1.5))+
   facet_grid( ~ metric, scales = "free_y")+
-      theme_classic() +
-        theme(
+  theme_classic() +
+  theme(
     strip.background = element_blank(),
     panel.grid.minor.x = element_line(size = .1, color = "grey"),
-    axis.title.x = element_blank(),
-    axis.title.y = element_text(size=10),
-    axis.text.x = element_text(angle = 45, hjust = 1),
-    # Increase plot size
-    plot.title = element_text(size = 10),
-    axis.text = element_text(size = 8),
-    axis.title = element_text(size = 8)
+    axis.text = element_text(size = 12),
+    axis.title = element_text(size = 14),
+    strip.text = element_text(size = 16, lineheight = 0.6)
       ) +
   ylab("Alpha diversity")
 ```
@@ -1167,32 +1143,22 @@ alpha_div %>%
 alpha_div %>%
   pivot_longer(-sample, names_to = "metric", values_to = "value") %>%
   left_join(., sample_metadata, by = "sample") %>%
-  mutate(metric=factor(metric,levels=c("richness","neutral"))) %>%
-  filter(metric!="phylogenetic") %>%
+  filter(metric=="phylogenetic") %>%
   filter(time_point == "Antibiotics" ) %>% 
-  ggplot(aes(y = value, x = Population, color=Population, fill=Population)) +
-  geom_boxplot(outlier.shape = NA) +
-  geom_jitter(alpha=0.5) +
-  scale_color_manual(name="Population",
-          breaks=c("Cold_wet","Hot_dry"),
-          labels=c("Cold","Hot"),
-          values=c('#008080', "#d57d2c")) +
-      scale_fill_manual(name="Population",
-          breaks=c("Cold_wet","Hot_dry"),
-          labels=c("Cold","Hot"),
-          values=c('#00808050', "#d57d2c50")) +
+   ggplot(aes(y = value, x = Population, color=Population, fill=Population)) +
+  geom_boxplot(width = 0.5,alpha=0.5 ,outlier.shape = NA, show.legend = FALSE) +
+  geom_jitter(width = 0.2, show.legend = FALSE) +
+  scale_color_manual(values=c('#008080', "#d57d2c")) +
+      scale_fill_manual(values=c('#008080', "#d57d2c")) +
   stat_compare_means(method = "wilcox.test", show.legend = F, size = 3, label.x = c(1.5))+
+  facet_grid( ~ metric, scales = "free_y")+
       theme_classic() +
         theme(
     strip.background = element_blank(),
     panel.grid.minor.x = element_line(size = .1, color = "grey"),
-    axis.title.x = element_blank(),
-    axis.title.y = element_text(size=10),
-    axis.text.x = element_text(angle = 45, hjust = 1),
-    # Increase plot size
-    plot.title = element_text(size = 10),
-    axis.text = element_text(size = 8),
-    axis.title = element_text(size = 8)
+    axis.text = element_text(size = 12),
+    axis.title = element_text(size = 14),
+    strip.text = element_text(size = 16, lineheight = 0.6)
       ) +
   ylab("Alpha diversity")
 ```
@@ -1266,16 +1232,13 @@ richness %>%
   mutate(x_cen = mean(NMDS1, na.rm = TRUE)) %>%
   mutate(y_cen = mean(NMDS2, na.rm = TRUE)) %>%
   ungroup() %>%
-  ggplot(., aes(x=NMDS1,y=NMDS2, color=Population, shape=time_point)) +
-  scale_color_manual(name="Population",
-                     breaks=c("Cold_wet","Hot_dry"),
-                     labels=c("Cold","Hot"),
-                     values=c('#008080',"#d57d2c")) +
+  ggplot(., aes(x=NMDS1,y=NMDS2, color=Population)) +
+  scale_color_manual(values=c('#008080',"#d57d2c")) +
   geom_point(size = 2) +
   geom_segment(aes(x=x_cen, y=y_cen, xend=NMDS1, yend=NMDS2), alpha=0.2) +
   labs(y = "NMDS2", x="NMDS1 \n Richness beta diversity") +
   theme_classic() +
-  theme(legend.position = "none")
+  theme()
 
 neutral %>%
   metaMDS(.,trymax = 500, k=2, verbosity=FALSE, trace=FALSE) %>%
@@ -1286,16 +1249,13 @@ neutral %>%
   mutate(x_cen = mean(NMDS1, na.rm = TRUE)) %>%
   mutate(y_cen = mean(NMDS2, na.rm = TRUE)) %>%
   ungroup() %>%
-  ggplot(., aes(x=NMDS1,y=NMDS2, color=Population, shape=time_point)) +
-  scale_color_manual(name="Population",
-                    breaks=c("Cold_wet","Hot_dry"),
-                    labels=c("Cold","Hot"),
-                    values=c('#008080',"#d57d2c")) +
+  ggplot(., aes(x=NMDS1,y=NMDS2, color=Population)) +
+  scale_color_manual(values=c('#008080',"#d57d2c")) +
   geom_point(size = 2) +
   geom_segment(aes(x=x_cen, y=y_cen, xend=NMDS1, yend=NMDS2), alpha=0.2) +
   labs(y = "NMDS2", x = "NMDS1 \n Neutral beta diversity") +
   theme_classic() +
-  theme(legend.position = "none")
+  theme()
 
 phylo %>%
   metaMDS(.,trymax = 500, k=2, verbosity=FALSE, trace=FALSE) %>%
@@ -1306,15 +1266,11 @@ phylo %>%
   mutate(x_cen = mean(NMDS1, na.rm = TRUE)) %>%
   mutate(y_cen = mean(NMDS2, na.rm = TRUE)) %>%
   ungroup() %>%
-  ggplot(., aes(x=NMDS1,y=NMDS2, color=Population, shape=time_point)) +
-  scale_color_manual(
-    name = "Population",
-    breaks = c("Cold_wet", "Hot_dry"),
-    labels = c("Cold", "Hot"),
-    values = c('#008080', "#d57d2c"))+
+  ggplot(., aes(x=NMDS1,y=NMDS2, color=Population)) +
+  scale_color_manual(values = c('#008080', "#d57d2c"))+
   geom_point(size=2) +
   geom_segment(aes(x=x_cen, y=y_cen, xend=NMDS1, yend=NMDS2), alpha=0.2) +
   labs(y= element_blank (),x="NMDS1 \n Phylogenetic beta diversity") +
   theme_classic() +
-  theme(legend.position = "none") 
+  theme() 
 ```
