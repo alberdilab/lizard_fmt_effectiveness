@@ -368,7 +368,7 @@ difference_table <- element_gift_filt %>%
 difference_table %>%
   ggplot(aes(x=forcats::fct_reorder(Function,Difference), y=Difference, fill=group_color)) + 
   geom_col() +
-  scale_fill_manual(values=c("#003a45", '#00808050')) +
+  scale_fill_manual(values=c("#00808050", '#008080')) +
   geom_hline(yintercept=0) + 
   coord_flip()+
   theme(axis.text = element_text(size = 10),

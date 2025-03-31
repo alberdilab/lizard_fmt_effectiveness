@@ -150,8 +150,8 @@ alpha_div %>%
   ggplot(aes(y = value, x = treatment, color=treatment, fill=treatment)) +
   geom_boxplot(width = 0.5,alpha=0.5 ,outlier.shape = NA, show.legend = FALSE) +
   geom_jitter(width = 0.2, show.legend = FALSE) +
-  scale_color_manual(values=c("#003a45", "#d5b52c")) +
-  scale_fill_manual(values=c("#003a45", "#d5b52c")) +
+  scale_color_manual(values=c('#008080', "#d5b52c")) +
+  scale_fill_manual(values=c('#008080', "#d5b52c")) +
   facet_wrap( ~ metric, scales = "free")+
   theme_classic() +
   theme(
@@ -253,7 +253,7 @@ richness %>%
   ungroup() %>%
   ggplot(aes(x = NMDS1, y = NMDS2, color = treatment)) +
   geom_point(size = 3) +
-  scale_color_manual(name="Time point",values=c("#003a45", "#d5b52c")) +
+  scale_color_manual(name="Time point",values=c('#008080', "#d5b52c")) +
   geom_segment(aes(x = x_cen, y = y_cen, xend = NMDS1, yend = NMDS2), alpha = 0.6, show.legend = FALSE) +
   theme(
     axis.title = element_text(size = 12, face = "bold"),
@@ -276,7 +276,7 @@ neutral %>%
   ungroup() %>%
   ggplot(aes(x = NMDS1, y = NMDS2, color = treatment)) +
   geom_point(size = 3) +
-  scale_color_manual(name="Time point",values=c("#003a45", "#d5b52c")) +
+  scale_color_manual(name="Time point",values=c('#008080', "#d5b52c")) +
   geom_segment(aes(x = x_cen, y = y_cen, xend = NMDS1, yend = NMDS2), alpha = 0.6, show.legend = FALSE) +
   theme(
     axis.title = element_text(size = 12, face = "bold"),
@@ -299,7 +299,7 @@ phylo %>%
   ungroup() %>%
   ggplot(aes(x = NMDS1, y = NMDS2, color = treatment)) +
   geom_point(size = 3) +
-  scale_color_manual(name="Time point",values=c("#003a45", "#d5b52c")) +
+  scale_color_manual(name="Time point",values=c('#008080', "#d5b52c")) +
   geom_segment(aes(x = x_cen, y = y_cen, xend = NMDS1, yend = NMDS2), alpha = 0.6, show.legend = FALSE) +
   theme(
     axis.title = element_text(size = 12, face = "bold"),
@@ -340,8 +340,8 @@ alpha_div %>%
   ggplot(aes(y = value, x = treatment, color=treatment, fill=treatment)) +
     geom_boxplot(width = 0.5,alpha=0.5 ,outlier.shape = NA, show.legend = FALSE) +
   geom_jitter(width = 0.2, show.legend = FALSE) +
-  scale_color_manual(values=c("#003a45", "#d5b52c")) +
-  scale_fill_manual(values=c("#003a45", "#d5b52c")) +
+  scale_color_manual(values=c('#008080', "#d5b52c")) +
+  scale_fill_manual(values=c('#008080', "#d5b52c")) +
   facet_wrap( ~ metric, scales = "free")+
   theme_classic() +
   theme(
