@@ -9,14 +9,17 @@ set.seed(1802)
 ```{r load_data_community}
 load("data/08032025data.Rdata")
 load("data/04032025gifts.Rdata")
+load("data/objects_2003.Rdata")
+
 ```
 
 ```{r data, comment="", message=FALSE, warning=FALSE, eval=FALSE}
 genome_counts_filt <- genome_counts_filt %>% 
   column_to_rownames(var = "genome") %>%
+  select(-AC85) %>%
+  select(any_of(c("genome",intersect(sample_metadata$Tube_code, colnames(read_counts))))) %>%
   filter(rowSums(. != 0, na.rm = TRUE) > 0)%>% 
   select(where(~ sum(.) > 0)) %>% 
-  select(-AC85) %>% 
   rownames_to_column(., "genome")
 
 genome_tree <- keep.tip(genome_tree, tip=genome_counts_filt$genome)

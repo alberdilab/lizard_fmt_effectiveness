@@ -806,17 +806,16 @@ ancombc_FMT_Donor_2803 = ancombc2(data = physeq_genome_filtered,
                   trend = FALSE,
                   iter_control = list(tol = 1e-5, max_iter = 20, verbose = FALSE),
                   em_control = list(tol = 1e-5, max_iter = 100),
-                  lme_control = lme4::lmerControl(),
                   mdfdr_control = list(fwer_ctrl_method = "holm", B = 100), 
                   trend_control = NULL)
 ```
 
 ```{r save_ancombc_fmt_tranp, warning=FALSE, comments="", message=FALSE}
-save(ancombc_FMT_Donor_2803, file = "data/ancombc_FMT_Donor_2003.Rdata")
+save(ancombc_FMT_Donor_2803, file = "data/ancombc_FMT_Donor_2803.Rdata")
 ```
 
 ```{r load_ancombc_fmt_tranp, warning=FALSE, comments="", message=FALSE, eval=FALSE}
-load("data/ancombc_FMT_Donor_2003.Rdata")
+load("data/ancombc_FMT_Donor_2803.Rdata")
 ```
 
 ```{r ancom_rand_fmt1, comment="", message=FALSE, warning=FALSE}
@@ -1254,7 +1253,6 @@ ancombc_FMT2_Donor_2803 = ancombc2(data = physeq_genome_filtered,
                   trend = FALSE,
                   iter_control = list(tol = 1e-5, max_iter = 20, verbose = FALSE),
                   em_control = list(tol = 1e-5, max_iter = 100),
-                  lme_control = lme4::lmerControl(),
                   mdfdr_control = list(fwer_ctrl_method = "holm", B = 100), 
                   trend_control = NULL)
 

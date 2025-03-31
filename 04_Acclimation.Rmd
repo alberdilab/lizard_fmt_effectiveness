@@ -431,7 +431,6 @@ ancombc_wild_accl_2803 = ancombc2(data = physeq_genome_filtered,
                   lme_control = lme4::lmerControl(),
                   mdfdr_control = list(fwer_ctrl_method = "holm", B = 100), 
                   trend_control = NULL)
-
 ```
 
 ```{r save_ancombc1_wild_accli, warning=FALSE, comments="", message=FALSE}
