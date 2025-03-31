@@ -50,6 +50,9 @@ structural-zeros-1
 differences-in-the-functional-capacity-1
 community-elements-differences-1
 community-functions-differences-1
+does-the-antibiotic-administration-deplete-the-gut-microbiota
+dna-extraction
+bacterial-fraction-change
 does-the-antibiotic-administration-change-the-microbial-community
 alpha-diversity-2
 beta-diversity-2

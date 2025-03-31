@@ -784,7 +784,7 @@ phylo_taxonomy <- genome_metadata %>%
 physeq_genome_filtered <- phyloseq(phylo_genome, phylo_taxonomy, phylo_samples)
 ```
 
-```{r ancom_rand_fmt_tranp, comment="", message=FALSE, warning=FALSE}
+```{r ancom_rand_fmt_tranp, comment="", message=FALSE, warning=FALSE, eval=FALSE}
 ancombc_FMT_Donor_2803 = ancombc2(data = physeq_genome_filtered, 
                   assay_name = "counts", 
                   tax_level = NULL,
@@ -810,11 +810,11 @@ ancombc_FMT_Donor_2803 = ancombc2(data = physeq_genome_filtered,
                   trend_control = NULL)
 ```
 
-```{r save_ancombc_fmt_tranp, warning=FALSE, comments="", message=FALSE}
+```{r save_ancombc_fmt_tranp, warning=FALSE, comments="", message=FALSE, eval=FALSE}
 save(ancombc_FMT_Donor_2803, file = "data/ancombc_FMT_Donor_2803.Rdata")
 ```
 
-```{r load_ancombc_fmt_tranp, warning=FALSE, comments="", message=FALSE, eval=FALSE}
+```{r load_ancombc_fmt_tranp, warning=FALSE, comments="", message=FALSE}
 load("data/ancombc_FMT_Donor_2803.Rdata")
 ```
 
@@ -1231,7 +1231,7 @@ phylo_taxonomy <- genome_metadata %>%
 physeq_genome_filtered <- phyloseq(phylo_genome, phylo_taxonomy, phylo_samples)
 ```
 
-```{r ancom_rand_fmt2_tranp, comment="", message=FALSE, warning=FALSE}
+```{r ancom_rand_fmt2_tranp, comment="", message=FALSE, warning=FALSE, eval=FALSE}
 ancombc_FMT2_Donor_2803 = ancombc2(data = physeq_genome_filtered, 
                   assay_name = "counts", 
                   tax_level = NULL,
@@ -1258,11 +1258,11 @@ ancombc_FMT2_Donor_2803 = ancombc2(data = physeq_genome_filtered,
 
 ```
 
-```{r save_ancombc_fmt2_tranp, warning=FALSE, comments="", message=FALSE}
+```{r save_ancombc_fmt2_tranp, warning=FALSE, comments="", message=FALSE, eval=FALSE}
 save(ancombc_FMT2_Donor_2803, file = "data/ancombc_FMT2_Donor_2803.Rdata")
 ```
 
-```{r load_ancombc_fmt2_tranp, warning=FALSE, comments="", message=FALSE, eval=FALSE}
+```{r load_ancombc_fmt2_tranp, warning=FALSE, comments="", message=FALSE}
 load("data/ancombc_FMT2_Donor_2803.Rdata")
 ```
 
