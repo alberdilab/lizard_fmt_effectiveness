@@ -1,9 +1,60 @@
-# Does the antibiotic administration change the microbial community?
+# Does the antibiotic administration deplete the gut microbiota?
 ```{r data_antibiotics, comment="", message=FALSE, warning=FALSE, echo=FALSE}
 load("data/objects_2803.Rdata")
 load("data/beta_08032025.Rdata")
 load("data/alpha_08032025.Rdata")
 ```
+
+## DNA extraction
+
+```{r data_dna_extraction, comment="", message=FALSE, warning=FALSE, echo=FALSE}
+dna_extraction <- read_excel("data/dna_extraction.xlsx")
+
+dna_extraction_df<-dna_extraction %>%
+  #pivot_longer(-sample, names_to = "metric", values_to = "value") %>%
+  left_join(., sample_metadata,by=join_by(sample==Tube_code))
+```
+
+```{r data_dna_extraction_model, comment="", message=FALSE, warning=FALSE, echo=FALSE}
+model_dna<- lmerTest::lmer(dna_extraction ~ time_point.x+(1|individual), data = dna_extraction_df)
+summary(model_dna)
+```
+
+## Bacterial fraction change
+
+```{r data_bacterial_fraction, comment="", message=FALSE, warning=FALSE, echo=FALSE}
+mag_fragtion_accli_antib<-data_stats_filter %>%
+  mutate(
+    unmapped_reads = trimmed_reads - mapped_lizard - mapped_mags,
+    mag_proportion = mapped_mags / (mapped_mags + unmapped_reads),
+    singlem_read_fraction = singlem_read_fraction
+  ) %>%
+  select(sample, mag_proportion, singlem_read_fraction) %>%
+  mutate(
+    mag_proportion = if_else(singlem_read_fraction == 0, 0, mag_proportion),
+    singlem_read_fraction = if_else(singlem_read_fraction == 0, NA, singlem_read_fraction),
+    singlem_read_fraction = if_else(singlem_read_fraction < mag_proportion, NA, singlem_read_fraction),
+    singlem_read_fraction = if_else(singlem_read_fraction > 1, 1, singlem_read_fraction)
+  ) %>%
+  pivot_longer(-sample, names_to = "proportion", values_to = "value") %>%
+  mutate(
+    proportion = factor(
+      proportion,
+      levels = c("mag_proportion", "singlem_read_fraction")
+    )
+  ) %>%
+  left_join(., sample_metadata, by = join_by(sample == Tube_code)) %>%
+  filter(!is.na(time_point))%>%
+  filter(time_point %in% c("Acclimation", "Antibiotics") & proportion=="mag_proportion")
+```
+
+```{r data_bacterial_fraction_model, comment="", message=FALSE, warning=FALSE, echo=FALSE}
+model_fraction<- lmerTest::lmer(value ~ time_point+(1|individual), data = mag_fragtion_accli_antib)
+summary(model_fraction)
+```
+
+
+# Does the antibiotic administration change the microbial community?
 
 ## Alpha diversity
 ```{r filter_data, comment="", message=FALSE, warning=FALSE}
