@@ -485,7 +485,7 @@ richness %>%
   ungroup() %>%
   ggplot(aes(x = NMDS1, y = NMDS2, color = treatment)) +
   geom_point(size = 3) +
-  scale_color_manual(name="Time point",values=c('#008080',"#003a45", "#d5b52c", "#76b183",'#40714b50'))) +
+  scale_color_manual(name="Time point",values=c('#008080',"#003a45", "#d5b52c", "#76b183",'#40714b50')) +
   geom_segment(aes(x = x_cen, y = y_cen, xend = NMDS1, yend = NMDS2), alpha = 0.5, show.legend = FALSE) +
   theme(
     axis.title = element_text(size = 12, face = "bold"),
@@ -508,7 +508,7 @@ neutral %>%
   ungroup() %>%
   ggplot(aes(x = NMDS1, y = NMDS2, color = treatment)) +
   geom_point(size = 3) +
-  scale_color_manual(name="Time point",values=c('#008080',"#003a45", "#d5b52c", "#76b183",'#40714b50'))) +
+  scale_color_manual(name="Time point",values=c('#008080',"#003a45", "#d5b52c", "#76b183",'#40714b50')) +
   geom_segment(aes(x = x_cen, y = y_cen, xend = NMDS1, yend = NMDS2), alpha = 0.5, show.legend = FALSE) +
   theme(
     axis.title = element_text(size = 12, face = "bold"),
@@ -531,7 +531,7 @@ phylo %>%
   ungroup() %>%
   ggplot(aes(x = NMDS1, y = NMDS2, color = treatment)) +
   geom_point(size = 3) +
-  scale_color_manual(name="Time point",values=c('#008080',"#003a45", "#d5b52c", "#76b183",'#40714b50'))) +
+  scale_color_manual(name="Time point",values=c('#008080',"#003a45", "#d5b52c", "#76b183",'#40714b50'))+
   geom_segment(aes(x = x_cen, y = y_cen, xend = NMDS1, yend = NMDS2), alpha = 0.5, show.legend = FALSE) +
   theme(
     axis.title = element_text(size = 12, face = "bold"),
